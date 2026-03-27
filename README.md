@@ -1,0 +1,103 @@
+# ECG Classification
+
+Software-first starter repository for binary ECG classification. This repo turns the proposal guide into a runnable baseline: load data, preprocess signals, train a small 1D CNN, evaluate results, and keep the final classifier boundary explicit for later hardware mapping.
+
+## What is in the repo
+
+- `src/data_loader.py`: dataset loading, demo-data generation, and PyTorch dataloaders
+- `src/preprocess.py`: signal shaping, normalization, binary label conversion, and dataset splits
+- `src/model.py`: small feature extractor plus a separate final classifier layer
+- `src/train.py`: end-to-end training loop and checkpoint saving
+- `src/evaluate.py`: held-out evaluation with confusion matrix, precision, recall, and F1
+- `src/inference.py`: single-sample prediction and feature-vector inspection
+- `data/README.md`: expected dataset format for the first software prototype
+- `EE533_software_first_implementation_guide.docx`: original planning document
+
+## Recommended first milestone
+
+Build a binary classifier for `normal` vs `abnormal` ECG segments on a regular computer before moving any logic to custom hardware. The model is intentionally small so we can validate the pipeline first and cleanly expose the boundary between:
+
+1. `feature_extractor`
+2. `classifier`
+
+That interface is the first candidate for later GPU mapping.
+
+## Quick start
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Run a smoke test without a real dataset:
+
+```bash
+python -m src.train --demo --run-name demo_baseline --epochs 5
+python -m src.evaluate --checkpoint checkpoints/demo_baseline.pt --demo
+python -m src.inference --checkpoint checkpoints/demo_baseline.pt --demo --index 0
+```
+
+Run with a real processed dataset:
+
+```bash
+python -m src.train --dataset data/processed/mitbih_binary.npz --run-name mitbih_baseline
+python -m src.evaluate --checkpoint checkpoints/mitbih_baseline.pt --dataset data/processed/mitbih_binary.npz
+python -m src.inference --checkpoint checkpoints/mitbih_baseline.pt --dataset data/processed/mitbih_binary.npz --split test --index 0
+```
+
+## Expected dataset format
+
+The baseline code expects a processed `.npz` file with:
+
+- `signals`: shape `(num_samples, signal_length)` or `(num_samples, channels, signal_length)`
+- `labels`: shape `(num_samples,)`
+
+If labels are not already binary, the preprocessing step maps the configured `normal_label` to `0` and every other label to `1`.
+
+Example:
+
+```python
+import numpy as np
+
+signals = np.random.randn(100, 256).astype("float32")
+labels = np.random.randint(0, 2, size=100).astype("int64")
+np.savez("data/processed/example_binary_ecg.npz", signals=signals, labels=labels)
+```
+
+## Project layout
+
+```text
+ECG_classification/
+├── checkpoints/
+├── data/
+│   ├── processed/
+│   ├── raw/
+│   └── README.md
+├── notebooks/
+├── results/
+├── src/
+│   ├── __init__.py
+│   ├── data_loader.py
+│   ├── evaluate.py
+│   ├── inference.py
+│   ├── model.py
+│   ├── preprocess.py
+│   └── train.py
+├── EE533_software_first_implementation_guide.docx
+├── README.md
+└── requirements.txt
+```
+
+## Outputs
+
+- Checkpoints are saved to `checkpoints/<run_name>.pt`
+- Training summaries are saved to `results/<run_name>_train.json`
+- Evaluation summaries are saved to `results/<checkpoint_stem>_<split>_metrics.json`
+
+## Next steps
+
+- Add a dataset-specific preprocessing script for MIT-BIH or your chosen ECG source
+- Plot sample waveforms and class distributions in `notebooks/`
+- Compare a simple MLP baseline against the provided 1D CNN
+- Replace the classifier call with a hardware wrapper once the software boundary is stable
