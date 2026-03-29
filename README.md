@@ -74,6 +74,33 @@ python -m src.export_parts --checkpoint checkpoints/mitbih_baseline.pt
 
 This saves `checkpoints/mitbih_baseline_feature_extractor.pt` (the 1D CNN) and `checkpoints/mitbih_baseline_classifier.pt` (the linear head) as independent state dicts.
 
+Export the classifier into FPGA-friendly files:
+
+```bash
+python -m src.export_classifier_hw \
+  --classifier-checkpoint checkpoints/mitbih_baseline_classifier.pt \
+  --out-dir hardware_export \
+  --prefix netfpga_classifier \
+  --layout row-major \
+  --word-bits 16 \
+  --frac-bits 8
+```
+
+This writes:
+
+- `hardware_export/netfpga_classifier_meta.json`
+- `hardware_export/netfpga_classifier_weight_matrix.txt`
+- `hardware_export/netfpga_classifier_bias_float.txt`
+- `hardware_export/netfpga_classifier_weight_q16_8.mem`
+- `hardware_export/netfpga_classifier_bias_q16_8.mem`
+
+For the current model, the hardware classifier contract is:
+
+- input feature vector: length `64`
+- weight matrix: shape `(2, 64)`
+- bias vector: shape `(2,)`
+- math: `logits = W * features + b`
+
 ## Expected dataset format
 
 The baseline code expects a processed `.npz` file with:
@@ -108,6 +135,7 @@ ECG_classification/
 │   ├── __init__.py
 │   ├── data_loader.py
 │   ├── evaluate.py
+│   ├── export_classifier_hw.py
 │   ├── export_parts.py
 │   ├── inference.py
 │   ├── model.py
