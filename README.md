@@ -117,5 +117,4 @@ ECG_classification/
 ## Next steps
 
 - Plot sample waveforms and class distributions in `notebooks/`
-- Compare a simple MLP baseline against the provided 1D CNN
 - Replace the classifier call with a hardware wrapper once the software boundary is stable
