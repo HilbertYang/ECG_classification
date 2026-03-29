@@ -38,6 +38,25 @@ python -m src.evaluate --checkpoint checkpoints/demo_baseline.pt --demo
 python -m src.inference --checkpoint checkpoints/demo_baseline.pt --demo --index 0
 ```
 
+Prepare a real MIT-BIH beat dataset in `.npz` format:
+
+```bash
+python -m src.prepare_mitbih --download --output data/processed/mitbih_binary.npz
+```
+
+This script downloads MIT-BIH Arrhythmia Database records into `data/raw/mitdb/`, extracts fixed-length beat-centered ECG segments, and writes a training-ready dataset with:
+
+- `signals`: `(num_samples, signal_length)`
+- `labels`: `(num_samples,)`, where `0` means a symbol listed in `--normal-symbols` and `1` means any other included beat symbol
+
+Useful variants:
+
+```bash
+python -m src.prepare_mitbih --download --records 100 101 102
+python -m src.prepare_mitbih --stream --records 100 --output data/processed/mitbih_100_binary.npz
+python -m src.prepare_mitbih --download --normal-symbols N L R e j
+```
+
 Run with a real processed dataset:
 
 ```bash
@@ -97,7 +116,6 @@ ECG_classification/
 
 ## Next steps
 
-- Add a dataset-specific preprocessing script for MIT-BIH or your chosen ECG source
 - Plot sample waveforms and class distributions in `notebooks/`
 - Compare a simple MLP baseline against the provided 1D CNN
 - Replace the classifier call with a hardware wrapper once the software boundary is stable
