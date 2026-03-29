@@ -18,3 +18,7 @@ data/raw/*
 
 data/processed/*
 !data/processed/.gitkeep
+
+logs/*
+!logs/.gitkeep
+
