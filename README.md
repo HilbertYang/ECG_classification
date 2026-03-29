@@ -10,6 +10,7 @@ Software-first starter repository for binary ECG classification. This repo turns
 - `src/train.py`: end-to-end training loop and checkpoint saving
 - `src/evaluate.py`: held-out evaluation with confusion matrix, precision, recall, and F1
 - `src/inference.py`: single-sample prediction and feature-vector inspection
+- `src/export_parts.py`: split a trained checkpoint into separate feature extractor and classifier files
 - `data/README.md`: expected dataset format for the first software prototype
 - `EE533_software_first_implementation_guide.docx`: original planning document
 
@@ -65,6 +66,14 @@ python -m src.evaluate --checkpoint checkpoints/mitbih_baseline.pt --dataset dat
 python -m src.inference --checkpoint checkpoints/mitbih_baseline.pt --dataset data/processed/mitbih_binary.npz --split test --index 0
 ```
 
+Export the trained model as two separate parts for hardware mapping:
+
+```bash
+python -m src.export_parts --checkpoint checkpoints/mitbih_baseline.pt
+```
+
+This saves `checkpoints/mitbih_baseline_feature_extractor.pt` (the 1D CNN) and `checkpoints/mitbih_baseline_classifier.pt` (the linear head) as independent state dicts.
+
 ## Expected dataset format
 
 The baseline code expects a processed `.npz` file with:
@@ -99,6 +108,7 @@ ECG_classification/
 │   ├── __init__.py
 │   ├── data_loader.py
 │   ├── evaluate.py
+│   ├── export_parts.py
 │   ├── inference.py
 │   ├── model.py
 │   ├── preprocess.py
@@ -113,6 +123,7 @@ ECG_classification/
 - Checkpoints are saved to `checkpoints/<run_name>.pt`
 - Training summaries are saved to `results/<run_name>_train.json`
 - Evaluation summaries are saved to `results/<checkpoint_stem>_<split>_metrics.json`
+- Exported parts are saved to `checkpoints/<run_name>_feature_extractor.pt` and `checkpoints/<run_name>_classifier.pt`
 
 ## Next steps
 
