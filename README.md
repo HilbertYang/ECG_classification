@@ -23,6 +23,63 @@ Build a binary classifier for `normal` vs `abnormal` ECG segments on a regular c
 
 That interface is the first candidate for later GPU mapping.
 
+## Current model architecture
+
+The baseline model is a small 1D CNN for binary ECG classification. By default, training resizes each ECG segment to length `256`, and single-channel inputs are shaped as `(batch, 1, 256)`.
+
+The current default network in `src/model.py` is:
+
+```text
+Input: (batch, 1, 256)
+
+Feature extractor:
+- Conv1d(1 -> 16, kernel_size=7, padding=3)
+- BatchNorm1d(16)
+- ReLU
+- MaxPool1d(2)
+
+- Conv1d(16 -> 32, kernel_size=7, padding=3)
+- BatchNorm1d(32)
+- ReLU
+- MaxPool1d(2)
+
+- Conv1d(32 -> 64, kernel_size=7, padding=3)
+- BatchNorm1d(64)
+- ReLU
+- MaxPool1d(2)
+
+- AdaptiveAvgPool1d(1)
+- Flatten
+
+Classifier:
+- Dropout(0.2)
+- Linear(64 -> 2)
+
+Output:
+- logits with shape (batch, 2)
+```
+
+With the default input length of `256`, the tensor shape changes like this:
+
+```text
+(batch, 1, 256)
+-> (batch, 16, 256)
+-> (batch, 16, 128)
+-> (batch, 32, 128)
+-> (batch, 32, 64)
+-> (batch, 64, 64)
+-> (batch, 64, 32)
+-> (batch, 64, 1)
+-> (batch, 64)
+-> (batch, 2)
+```
+
+Intuition:
+
+- `Conv1d` increases the number of learned feature channels.
+- `MaxPool1d(2)` halves the signal length while keeping the strongest local response in each window.
+- `AdaptiveAvgPool1d(1)` compresses each channel into one value, producing a final `64`-dimensional feature vector for the classifier.
+
 ## Quick start
 
 ```bash
