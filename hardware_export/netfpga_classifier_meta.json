@@ -1,0 +1,19 @@
+{
+  "source_checkpoint": "checkpoints/mitbih_baseline_classifier.pt",
+  "input_dim": 64,
+  "output_dim": 2,
+  "weight_shape": [
+    2,
+    64
+  ],
+  "bias_shape": [
+    2
+  ],
+  "formula": "logits[o] = sum_i weight[o][i] * features[i] + bias[o]",
+  "weight_layout": "row-major",
+  "word_bits": 16,
+  "frac_bits": 8,
+  "scale": 256,
+  "weight_clipped_values": 0,
+  "bias_clipped_values": 0
+}
