@@ -209,6 +209,25 @@ This writes:
 - `<prefix>_reference_bundle.npz`: all exported arrays in one bundle
 - `<prefix>_meta.json`: export summary and accuracy/agreement metrics
 
+For a tiny hardware-debug subset, you can export a specific MIT-BIH record directly from dataset order:
+
+```bash
+python -m src.export_fpga_reference \
+  --checkpoint checkpoints/mitbih_baseline.pt \
+  --dataset data/processed/mitbih_binary.npz \
+  --record-id 100 \
+  --first-n-beats 16 \
+  --accumulation fp32 \
+  --out-dir hardware_export \
+  --prefix mini_mitbih_record_100_16beats
+```
+
+This also writes:
+
+- `<prefix>_record_ids.txt`
+- `<prefix>_beat_symbols.txt`
+- `<prefix>_beat_samples.txt`
+
 ## Expected dataset format
 
 The baseline code expects a processed `.npz` file with:
