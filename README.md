@@ -185,6 +185,30 @@ python -m src.emulate_classifier_bf16 \
 
 This reports how much BF16 storage changes the logits and whether the final predictions still agree.
 
+Export CNN output features for FPGA input together with software reference logits and predictions:
+
+```bash
+python -m src.export_fpga_reference \
+  --checkpoint checkpoints/mitbih_baseline.pt \
+  --dataset data/processed/mitbih_binary.npz \
+  --split test \
+  --max-samples 128 \
+  --accumulation fp32 \
+  --out-dir hardware_export
+```
+
+This writes:
+
+- `<prefix>_features_fp32.txt`: one feature vector per sample, for inspection
+- `<prefix>_features_bf16.mem`: flattened BF16 feature stream for FPGA input
+- `<prefix>_labels.txt`: ground-truth labels
+- `<prefix>_fp32_logits.txt`: software FP32 classifier outputs
+- `<prefix>_bf16_logits.txt`: BF16-emulated classifier outputs
+- `<prefix>_fp32_pred.txt`: FP32 predicted classes
+- `<prefix>_bf16_pred.txt`: BF16-emulated predicted classes
+- `<prefix>_reference_bundle.npz`: all exported arrays in one bundle
+- `<prefix>_meta.json`: export summary and accuracy/agreement metrics
+
 ## Expected dataset format
 
 The baseline code expects a processed `.npz` file with:
