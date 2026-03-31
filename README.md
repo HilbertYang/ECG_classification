@@ -158,6 +158,33 @@ For the current model, the hardware classifier contract is:
 - bias vector: shape `(2,)`
 - math: `logits = W * features + b`
 
+Export the classifier as BF16 files for a BF16-capable hardware path:
+
+```bash
+python -m src.export_classifier_bf16 \
+  --classifier-checkpoint checkpoints/mitbih_baseline_classifier.pt \
+  --out-dir hardware_export \
+  --prefix netfpga_classifier \
+  --layout row-major
+```
+
+This writes BF16 memory files such as:
+
+- `hardware_export/netfpga_classifier_weight_bf16.mem`
+- `hardware_export/netfpga_classifier_bias_bf16.mem`
+
+Compare the original FP32 classifier against a BF16-emulated classifier before changing training:
+
+```bash
+python -m src.emulate_classifier_bf16 \
+  --checkpoint checkpoints/mitbih_baseline.pt \
+  --dataset data/processed/mitbih_binary.npz \
+  --split test \
+  --accumulation fp32
+```
+
+This reports how much BF16 storage changes the logits and whether the final predictions still agree.
+
 ## Expected dataset format
 
 The baseline code expects a processed `.npz` file with:
@@ -191,7 +218,10 @@ ECG_classification/
 ├── src/
 │   ├── __init__.py
 │   ├── data_loader.py
+│   ├── bf16_utils.py
 │   ├── evaluate.py
+│   ├── emulate_classifier_bf16.py
+│   ├── export_classifier_bf16.py
 │   ├── export_classifier_hw.py
 │   ├── export_parts.py
 │   ├── inference.py
