@@ -29,7 +29,7 @@ fi
 queue_output="$(myqueue)"
 
 extract_job_ids() {
-  awk 'NR > 3 && $1 ~ /^[0-9]+$/ { print $1 }'
+  awk '$1 ~ /^[0-9]+$/ { print $1 }'
 }
 
 if [[ -z "${JOB_ID}" ]]; then
@@ -67,7 +67,7 @@ all_jobs_done() {
 
   while read -r id; do
     [[ -z "${id}" ]] && continue
-    if printf '%s\n' "${current_queue}" | awk 'NR > 3 && $1 == job { found=1 } END { exit !found }' job="${id}"; then
+    if printf '%s\n' "${current_queue}" | awk '$1 == job { found=1 } END { exit !found }' job="${id}"; then
       return 1
     fi
   done <<< "${JOB_IDS}"
