@@ -1,0 +1,30 @@
+{
+  "checkpoint": "checkpoints/mitbih_baseline.pt",
+  "dataset_source": "mitbih_binary_record_100",
+  "split": "test",
+  "selection_mode": "record_subset",
+  "record_id": "100",
+  "first_n_beats": 16,
+  "samples_exported": 16,
+  "feature_dim": 64,
+  "num_classes": 2,
+  "accumulation": "fp32",
+  "fp32_accuracy": 0.9375,
+  "bf16_accuracy": 0.9375,
+  "prediction_agreement": 1.0,
+  "mean_abs_logit_diff": 0.0020327121019363403,
+  "max_abs_logit_diff": 0.005724906921386719,
+  "files": {
+    "features_fp32_txt": "hardware_export/mini_mitbih_record_100_16beats_features_fp32.txt",
+    "features_bf16_mem": "hardware_export/mini_mitbih_record_100_16beats_features_bf16.mem",
+    "labels_txt": "hardware_export/mini_mitbih_record_100_16beats_labels.txt",
+    "fp32_logits_txt": "hardware_export/mini_mitbih_record_100_16beats_fp32_logits.txt",
+    "bf16_logits_txt": "hardware_export/mini_mitbih_record_100_16beats_bf16_logits.txt",
+    "fp32_pred_txt": "hardware_export/mini_mitbih_record_100_16beats_fp32_pred.txt",
+    "bf16_pred_txt": "hardware_export/mini_mitbih_record_100_16beats_bf16_pred.txt",
+    "reference_bundle_npz": "hardware_export/mini_mitbih_record_100_16beats_reference_bundle.npz",
+    "record_ids_txt": "hardware_export/mini_mitbih_record_100_16beats_record_ids.txt",
+    "beat_symbols_txt": "hardware_export/mini_mitbih_record_100_16beats_beat_symbols.txt",
+    "beat_samples_txt": "hardware_export/mini_mitbih_record_100_16beats_beat_samples.txt"
+  }
+}
