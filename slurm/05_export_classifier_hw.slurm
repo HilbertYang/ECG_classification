@@ -15,11 +15,11 @@
 #   sbatch slurm/05_export_classifier_hw.slurm
 #
 # OUTPUT:
-#   hardware_export/netfpga_classifier_meta.json
-#   hardware_export/netfpga_classifier_weight_matrix.txt
-#   hardware_export/netfpga_classifier_bias_float.txt
-#   hardware_export/netfpga_classifier_weight_q16_8.mem
-#   hardware_export/netfpga_classifier_bias_q16_8.mem
+#   hardware_export/param_fp32/netfpga_classifier_meta.json
+#   hardware_export/param_fp32/netfpga_classifier_weight_matrix.txt
+#   hardware_export/param_fp32/netfpga_classifier_bias_float.txt
+#   hardware_export/param_fp32/netfpga_classifier_weight_q16_8.mem
+#   hardware_export/param_fp32/netfpga_classifier_bias_q16_8.mem
 #------------------------------------------------------------
 
 #SBATCH --job-name=export_hw
@@ -44,7 +44,7 @@ echo ""
 cd "$SLURM_SUBMIT_DIR"
 
 CLASSIFIER_CKPT="checkpoints/mitbih_baseline_classifier.pt"
-OUT_DIR="hardware_export"
+OUT_DIR="hardware_export/param_fp32"
 
 if [ ! -f "$CLASSIFIER_CKPT" ]; then
     echo "ERROR: Classifier checkpoint not found: $CLASSIFIER_CKPT"

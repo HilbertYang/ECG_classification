@@ -15,15 +15,15 @@
 #   sbatch slurm/08_export_fpga_reference.slurm
 #
 # OUTPUT:
-#   hardware_export/mitbih_baseline_test_meta.json
-#   hardware_export/mitbih_baseline_test_features_fp32.txt
-#   hardware_export/mitbih_baseline_test_features_bf16.mem
-#   hardware_export/mitbih_baseline_test_labels.txt
-#   hardware_export/mitbih_baseline_test_fp32_logits.txt
-#   hardware_export/mitbih_baseline_test_bf16_logits.txt
-#   hardware_export/mitbih_baseline_test_fp32_pred.txt
-#   hardware_export/mitbih_baseline_test_bf16_pred.txt
-#   hardware_export/mitbih_baseline_test_reference_bundle.npz
+#   hardware_export/extracted_feature/mitbih_baseline_test_meta.json
+#   hardware_export/extracted_feature/mitbih_baseline_test_features_fp32.txt
+#   hardware_export/extracted_feature/mitbih_baseline_test_features_bf16.mem
+#   hardware_export/extracted_feature/mitbih_baseline_test_labels.txt
+#   hardware_export/extracted_feature/mitbih_baseline_test_fp32_logits.txt
+#   hardware_export/extracted_feature/mitbih_baseline_test_bf16_logits.txt
+#   hardware_export/extracted_feature/mitbih_baseline_test_fp32_pred.txt
+#   hardware_export/extracted_feature/mitbih_baseline_test_bf16_pred.txt
+#   hardware_export/extracted_feature/mitbih_baseline_test_reference_bundle.npz
 #------------------------------------------------------------
 
 #SBATCH --job-name=export_fpga_ref
@@ -49,7 +49,7 @@ cd "$SLURM_SUBMIT_DIR"
 
 FULL_CKPT="checkpoints/mitbih_baseline.pt"
 DATASET="data/processed/mitbih_binary.npz"
-OUT_DIR="hardware_export"
+OUT_DIR="hardware_export/extracted_feature"
 
 if [ ! -f "$FULL_CKPT" ]; then
     echo "ERROR: Full checkpoint not found: $FULL_CKPT"

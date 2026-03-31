@@ -136,7 +136,7 @@ Export the classifier into FPGA-friendly files:
 ```bash
 python -m src.export_classifier_hw \
   --classifier-checkpoint checkpoints/mitbih_baseline_classifier.pt \
-  --out-dir hardware_export \
+  --out-dir hardware_export/param_fp32 \
   --prefix netfpga_classifier \
   --layout row-major \
   --word-bits 16 \
@@ -145,11 +145,11 @@ python -m src.export_classifier_hw \
 
 This writes:
 
-- `hardware_export/netfpga_classifier_meta.json`
-- `hardware_export/netfpga_classifier_weight_matrix.txt`
-- `hardware_export/netfpga_classifier_bias_float.txt`
-- `hardware_export/netfpga_classifier_weight_q16_8.mem`
-- `hardware_export/netfpga_classifier_bias_q16_8.mem`
+- `hardware_export/param_fp32/netfpga_classifier_meta.json`
+- `hardware_export/param_fp32/netfpga_classifier_weight_matrix.txt`
+- `hardware_export/param_fp32/netfpga_classifier_bias_float.txt`
+- `hardware_export/param_fp32/netfpga_classifier_weight_q16_8.mem`
+- `hardware_export/param_fp32/netfpga_classifier_bias_q16_8.mem`
 
 For the current model, the hardware classifier contract is:
 
@@ -163,15 +163,15 @@ Export the classifier as BF16 files for a BF16-capable hardware path:
 ```bash
 python -m src.export_classifier_bf16 \
   --classifier-checkpoint checkpoints/mitbih_baseline_classifier.pt \
-  --out-dir hardware_export \
+  --out-dir hardware_export/param_bf16 \
   --prefix netfpga_classifier \
   --layout row-major
 ```
 
 This writes BF16 memory files such as:
 
-- `hardware_export/netfpga_classifier_weight_bf16.mem`
-- `hardware_export/netfpga_classifier_bias_bf16.mem`
+- `hardware_export/param_bf16/netfpga_classifier_weight_bf16.mem`
+- `hardware_export/param_bf16/netfpga_classifier_bias_bf16.mem`
 
 Compare the original FP32 classifier against a BF16-emulated classifier before changing training:
 
@@ -194,7 +194,7 @@ python -m src.export_fpga_reference \
   --split test \
   --max-samples 128 \
   --accumulation fp32 \
-  --out-dir hardware_export
+  --out-dir hardware_export/extracted_feature
 ```
 
 This writes:
@@ -218,7 +218,7 @@ python -m src.export_fpga_reference \
   --record-id 100 \
   --first-n-beats 16 \
   --accumulation fp32 \
-  --out-dir hardware_export \
+  --out-dir hardware_export/extracted_feature \
   --prefix mini_mitbih_record_100_16beats
 ```
 
@@ -227,6 +227,69 @@ This also writes:
 - `<prefix>_record_ids.txt`
 - `<prefix>_beat_symbols.txt`
 - `<prefix>_beat_samples.txt`
+
+## Current `hardware_export/` layout
+
+The current repository organizes hardware-facing artifacts into three subdirectories:
+
+```text
+hardware_export/
+├── extracted_feature/
+│   ├── mitbih_baseline_test_bf16_logits.txt
+│   ├── mitbih_baseline_test_bf16_pred.txt
+│   ├── mitbih_baseline_test_features_bf16.mem
+│   ├── mitbih_baseline_test_features_fp32.txt
+│   ├── mitbih_baseline_test_fp32_logits.txt
+│   ├── mitbih_baseline_test_fp32_pred.txt
+│   ├── mitbih_baseline_test_labels.txt
+│   ├── mitbih_baseline_test_meta.json
+│   └── mitbih_baseline_test_reference_bundle.npz
+├── param_bf16/
+│   ├── netfpga_classifier_bf16_meta.json
+│   ├── netfpga_classifier_bias_bf16.mem
+│   ├── netfpga_classifier_bias_bf16_float.txt
+│   ├── netfpga_classifier_weight_bf16.mem
+│   └── netfpga_classifier_weight_bf16_float.txt
+└── param_fp32/
+    ├── netfpga_classifier_bias_float.txt
+    ├── netfpga_classifier_bias_q16_8.mem
+    ├── netfpga_classifier_meta.json
+    ├── netfpga_classifier_weight_matrix.txt
+    └── netfpga_classifier_weight_q16_8.mem
+```
+
+What each folder is for:
+
+- `hardware_export/param_fp32/`: classifier parameters exported for a fixed-point FPGA path
+- `hardware_export/param_bf16/`: classifier parameters exported for a BF16-capable FPGA or accelerator path
+- `hardware_export/extracted_feature/`: CNN output features plus software golden results for hardware comparison
+
+What the files are for:
+
+- `*_weight_matrix.txt`: human-readable floating-point classifier weights, useful for inspection and debugging
+- `*_bias_float.txt`: human-readable floating-point bias values
+- `*_weight_q16_8.mem`: fixed-point weight memory image for FPGA initialization
+- `*_bias_q16_8.mem`: fixed-point bias memory image for FPGA initialization
+- `*_weight_bf16.mem`: BF16 weight memory image for BF16 hardware input
+- `*_bias_bf16.mem`: BF16 bias memory image for BF16 hardware input
+- `*_weight_bf16_float.txt`: rounded BF16 weights converted back to float text for checking quantization effects
+- `*_bias_bf16_float.txt`: rounded BF16 bias converted back to float text for checking quantization effects
+- `*_meta.json`: metadata about tensor shapes, quantization format, source checkpoint, and export settings
+- `*_features_fp32.txt`: one CNN feature vector per sample in readable float format
+- `*_features_bf16.mem`: flattened BF16 feature stream to feed into FPGA logic
+- `*_labels.txt`: ground-truth labels for each exported sample
+- `*_fp32_logits.txt`: software FP32 classifier outputs, used as a golden reference
+- `*_bf16_logits.txt`: BF16-emulated classifier outputs, used when hardware is expected to behave like BF16
+- `*_fp32_pred.txt`: final FP32 predicted class per sample
+- `*_bf16_pred.txt`: final BF16-emulated predicted class per sample
+- `*_reference_bundle.npz`: all exported arrays bundled together for quick loading in Python
+
+Recommended comparison flow:
+
+1. Use `param_fp32/` or `param_bf16/` to initialize the hardware classifier weights and bias.
+2. Feed the FPGA with the feature vectors from `extracted_feature/*_features_bf16.mem`.
+3. Compare FPGA logits or final classes against `*_fp32_logits.txt` / `*_fp32_pred.txt` or against the BF16 versions if your hardware math is BF16-like.
+4. Use `*_meta.json` and `*_reference_bundle.npz` when you need shapes, counts, or a compact software-side debug bundle.
 
 ## Expected dataset format
 
@@ -256,8 +319,23 @@ ECG_classification/
 │   ├── processed/
 │   ├── raw/
 │   └── README.md
+├── hardware_export/
+│   ├── extracted_feature/
+│   ├── param_bf16/
+│   └── param_fp32/
+├── logs/
 ├── notebooks/
 ├── results/
+├── slurm/
+│   ├── 01_setup_env.slurm
+│   ├── 02_demo_train.slurm
+│   ├── 03_gpu_train.slurm
+│   ├── 04_export_parts.slurm
+│   ├── 05_export_classifier_hw.slurm
+│   ├── 06_export_classifier_bf16.slurm
+│   ├── 07_emulate_classifier_bf16.slurm
+│   ├── 08_export_fpga_reference.slurm
+│   └── 09_export_fpga_reference_mini.slurm
 ├── src/
 │   ├── __init__.py
 │   ├── data_loader.py
@@ -270,8 +348,10 @@ ECG_classification/
 │   ├── export_parts.py
 │   ├── inference.py
 │   ├── model.py
+│   ├── prepare_mitbih.py
 │   ├── preprocess.py
 │   └── train.py
+├── CLAUDE.md
 ├── EE533_software_first_implementation_guide.docx
 ├── README.md
 └── requirements.txt

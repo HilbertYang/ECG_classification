@@ -15,12 +15,12 @@
 #   sbatch slurm/09_export_fpga_reference_mini.slurm
 #
 # OUTPUT:
-#   hardware_export/mini_mitbih_record_100_16beats_meta.json
-#   hardware_export/mini_mitbih_record_100_16beats_features_bf16.mem
-#   hardware_export/mini_mitbih_record_100_16beats_fp32_logits.txt
-#   hardware_export/mini_mitbih_record_100_16beats_bf16_logits.txt
-#   hardware_export/mini_mitbih_record_100_16beats_fp32_pred.txt
-#   hardware_export/mini_mitbih_record_100_16beats_bf16_pred.txt
+#   hardware_export/mini_feature/mini_mitbih_record_*_*beats_meta.json
+#   hardware_export/mini_feature/mini_mitbih_record_*_*beats_features_bf16.mem
+#   hardware_export/mini_feature/mini_mitbih_record_*_*beats_fp32_logits.txt
+#   hardware_export/mini_feature/mini_mitbih_record_*_*beats_bf16_logits.txt
+#   hardware_export/mini_feature/mini_mitbih_record_*_*beats_fp32_pred.txt
+#   hardware_export/mini_feature/mini_mitbih_record_*_*beats_bf16_pred.txt
 #------------------------------------------------------------
 
 #SBATCH --job-name=export_fpga_mini
@@ -46,7 +46,7 @@ cd "$SLURM_SUBMIT_DIR"
 
 FULL_CKPT="checkpoints/mitbih_baseline.pt"
 DATASET="data/processed/mitbih_binary.npz"
-OUT_DIR="hardware_export"
+OUT_DIR="hardware_export/mini_feature"
 RECORD_ID="100"
 BEAT_COUNT="16"
 PREFIX="mini_mitbih_record_100_16beats"
