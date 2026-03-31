@@ -247,6 +247,7 @@ ECG_classification/
 │   ├── emulate_classifier_bf16.py
 │   ├── export_classifier_bf16.py
 │   ├── export_classifier_hw.py
+│   ├── export_fpga_reference.py
 │   ├── export_parts.py
 │   ├── inference.py
 │   ├── model.py
