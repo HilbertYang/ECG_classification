@@ -10,8 +10,8 @@ env/
 checkpoints/*
 !checkpoints/.gitkeep
 
-results/*
-!results/.gitkeep
+# results/*
+# !results/.gitkeep
 
 data/raw/*
 !data/raw/.gitkeep
