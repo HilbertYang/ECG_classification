@@ -1,0 +1,27 @@
+{
+  "checkpoint": "checkpoints/mitbih_lightweight.pt",
+  "dataset": "data/processed/mitbih_binary.npz",
+  "record_id": "200",
+  "first_n_beats": 4,
+  "samples_exported": 4,
+  "input_shape": [
+    4,
+    1,
+    256
+  ],
+  "flattened_input_shape": [
+    4,
+    256
+  ],
+  "signal_length": 256,
+  "format": "bf16",
+  "files": {
+    "inputs_fp32_txt": "hardware_export/input_bf16/mini_mitbih_record_200_4beats_input_fp32.txt",
+    "inputs_bf16_mem": "hardware_export/input_bf16/mini_mitbih_record_200_4beats_input_bf16.mem",
+    "labels_txt": "hardware_export/input_bf16/mini_mitbih_record_200_4beats_input_labels.txt",
+    "record_ids_txt": "hardware_export/input_bf16/mini_mitbih_record_200_4beats_input_record_ids.txt",
+    "beat_symbols_txt": "hardware_export/input_bf16/mini_mitbih_record_200_4beats_input_beat_symbols.txt",
+    "beat_samples_txt": "hardware_export/input_bf16/mini_mitbih_record_200_4beats_input_beat_samples.txt",
+    "meta_json": "hardware_export/input_bf16/mini_mitbih_record_200_4beats_input_meta.json"
+  }
+}

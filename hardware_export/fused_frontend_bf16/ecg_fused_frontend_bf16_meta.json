@@ -1,0 +1,44 @@
+{
+  "source_checkpoint": "checkpoints/mitbih_lightweight.pt",
+  "format": "bf16",
+  "frontend_type": "fused_conv1d_bn",
+  "input_channels": 1,
+  "output_channels": 1,
+  "kernel_size": [
+    7
+  ],
+  "stride": [
+    1
+  ],
+  "padding": [
+    3
+  ],
+  "dilation": [
+    1
+  ],
+  "groups": 1,
+  "signal_length": 256,
+  "feature_dim_after_pool_and_flatten": 128,
+  "conv_weight_shape": [
+    1,
+    1,
+    7
+  ],
+  "conv_bias_shape": [
+    1
+  ],
+  "classifier_weight_shape": [
+    2,
+    128
+  ],
+  "classifier_bias_shape": [
+    2
+  ],
+  "hardware_flow": [
+    "conv1d_with_fused_bn",
+    "relu",
+    "maxpool1d_kernel_2",
+    "flatten",
+    "linear_classifier"
+  ]
+}
