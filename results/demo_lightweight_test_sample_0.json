@@ -1,0 +1,16 @@
+{
+  "checkpoint": "checkpoints/demo_lightweight.pt",
+  "dataset_source": "demo",
+  "split": "test",
+  "index": 0,
+  "ground_truth": 0,
+  "prediction": 0,
+  "probabilities": [
+    0.9190503358840942,
+    0.08094971626996994
+  ],
+  "feature_vector_shape": [
+    1,
+    128
+  ]
+}

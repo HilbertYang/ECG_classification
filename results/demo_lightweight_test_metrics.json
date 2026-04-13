@@ -1,0 +1,19 @@
+{
+  "checkpoint": "checkpoints/demo_lightweight.pt",
+  "split": "test",
+  "dataset_source": "demo",
+  "accuracy": 0.9888888888888889,
+  "precision": 1.0,
+  "recall": 0.9772727272727273,
+  "f1_score": 0.9885057471264368,
+  "confusion_matrix": [
+    [
+      46,
+      0
+    ],
+    [
+      1,
+      43
+    ]
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "checkpoint": "checkpoints/mitbih_baseline.pt",
+  "dataset_source": "mitbih_binary",
+  "split": "test",
+  "samples_compared": 16425,
+  "accumulation": "fp32",
+  "fp32_accuracy": 0.9849619482496195,
+  "bf16_accuracy": 0.9849619482496195,
+  "prediction_agreement": 1.0,
+  "mean_abs_logit_diff": 0.002031059004366398,
+  "max_abs_logit_diff": 0.016666412353515625
+}

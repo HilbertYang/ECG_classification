@@ -1,0 +1,19 @@
+{
+  "checkpoint": "checkpoints/mitbih_baseline.pt",
+  "split": "test",
+  "dataset_source": "mitbih_binary",
+  "accuracy": 0.9849619482496195,
+  "precision": 0.9896496815286624,
+  "recall": 0.9622604993226244,
+  "f1_score": 0.9757629280737906,
+  "confusion_matrix": [
+    [
+      11206,
+      52
+    ],
+    [
+      195,
+      4972
+    ]
+  ]
+}

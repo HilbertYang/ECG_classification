@@ -1,0 +1,19 @@
+{
+  "checkpoint": "checkpoints/mitbih_lightweight.pt",
+  "split": "test",
+  "dataset_source": "mitbih_binary",
+  "accuracy": 0.8974733637747336,
+  "precision": 0.8398048780487805,
+  "recall": 0.8329785175149991,
+  "f1_score": 0.8363777691410804,
+  "confusion_matrix": [
+    [
+      10437,
+      821
+    ],
+    [
+      863,
+      4304
+    ]
+  ]
+}

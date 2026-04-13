@@ -1,0 +1,80 @@
+{
+  "run_name": "demo_baseline",
+  "checkpoint": "checkpoints/demo_baseline.pt",
+  "source_name": "demo",
+  "best_epoch": 10,
+  "best_val_accuracy": 1.0,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.5739663904621488,
+      "train_accuracy": 0.7666666666666667,
+      "val_loss": 0.6559377087487115,
+      "val_accuracy": 0.6
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.3697281374817803,
+      "train_accuracy": 0.9452380952380952,
+      "val_loss": 0.565395904911889,
+      "val_accuracy": 0.7888888888888889
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.2143961338769822,
+      "train_accuracy": 0.9785714285714285,
+      "val_loss": 0.3993747373421987,
+      "val_accuracy": 0.9
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.12740227977434795,
+      "train_accuracy": 0.9952380952380953,
+      "val_loss": 0.2107462422715293,
+      "val_accuracy": 0.9888888888888889
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.08513727195206143,
+      "train_accuracy": 0.9976190476190476,
+      "val_loss": 0.12540238036049736,
+      "val_accuracy": 0.9888888888888889
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.05797641830784934,
+      "train_accuracy": 0.9976190476190476,
+      "val_loss": 0.07157656401395798,
+      "val_accuracy": 1.0
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.03686677057828222,
+      "train_accuracy": 1.0,
+      "val_loss": 0.04606791643632783,
+      "val_accuracy": 1.0
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.03177144940765131,
+      "train_accuracy": 1.0,
+      "val_loss": 0.032626637526684335,
+      "val_accuracy": 1.0
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.026021289843178932,
+      "train_accuracy": 1.0,
+      "val_loss": 0.02358125357164277,
+      "val_accuracy": 1.0
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.018147398566915874,
+      "train_accuracy": 1.0,
+      "val_loss": 0.016905407938692305,
+      "val_accuracy": 1.0
+    }
+  ],
+  "feature_vector_length": 64
+}

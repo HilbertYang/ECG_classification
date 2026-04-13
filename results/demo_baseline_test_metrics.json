@@ -1,0 +1,19 @@
+{
+  "checkpoint": "checkpoints/demo_baseline.pt",
+  "split": "test",
+  "dataset_source": "demo",
+  "accuracy": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1_score": 1.0,
+  "confusion_matrix": [
+    [
+      46,
+      0
+    ],
+    [
+      0,
+      44
+    ]
+  ]
+}

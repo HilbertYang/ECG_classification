@@ -1,0 +1,16 @@
+{
+  "checkpoint": "checkpoints/mitbih_baseline.pt",
+  "dataset_source": "mitbih_binary",
+  "split": "test",
+  "index": 0,
+  "ground_truth": 0,
+  "prediction": 0,
+  "probabilities": [
+    0.9840760827064514,
+    0.015923887491226196
+  ],
+  "feature_vector_shape": [
+    1,
+    64
+  ]
+}
