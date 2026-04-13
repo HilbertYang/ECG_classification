@@ -8,25 +8,25 @@
 #
 # PREREQUISITE:
 #   - Run 01_setup_env.slurm first
-#   - Train a model first so checkpoints/mitbih_baseline.pt exists
+#   - Train a model first so checkpoints/mitbih_lightweight.pt exists
 #   - Have a processed dataset such as data/processed/mitbih_binary.npz
 #
 # HOW TO SUBMIT:
-#   sbatch slurm/07_emulate_classifier_bf16.slurm
+#   sbatch slurm/current/07_emulate_classifier_bf16.slurm
 #
 # OUTPUT:
-#   results/mitbih_baseline_test_bf16_fp32.json
+#   results/mitbih_lightweight_test_bf16_fp32.json
 #------------------------------------------------------------
 
-#SBATCH --job-name=emulate_bf16
+#SBATCH --job-name=emu_curr
 #SBATCH --partition=main
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8GB
 #SBATCH --time=00:20:00
-#SBATCH --output=logs/emulate_classifier_bf16.out
-#SBATCH --error=logs/emulate_classifier_bf16.err
+#SBATCH --output=logs/current_emulate_classifier_bf16.out
+#SBATCH --error=logs/current_emulate_classifier_bf16.err
 
 set -e
 
@@ -39,20 +39,20 @@ echo ""
 
 cd "$SLURM_SUBMIT_DIR"
 
-FULL_CKPT="checkpoints/mitbih_baseline.pt"
+FULL_CKPT="checkpoints/mitbih_lightweight.pt"
 DATASET="data/processed/mitbih_binary.npz"
 
 if [ ! -f "$FULL_CKPT" ]; then
     echo "ERROR: Full checkpoint not found: $FULL_CKPT"
     echo "Train the model first:"
-    echo "  sbatch slurm/03_gpu_train.slurm"
+    echo "  sbatch slurm/current/03_gpu_train.slurm"
     exit 1
 fi
 
 if [ ! -f "$DATASET" ]; then
     echo "ERROR: Processed dataset not found: $DATASET"
     echo "Prepare the dataset first or rerun:"
-    echo "  sbatch slurm/03_gpu_train.slurm"
+    echo "  sbatch slurm/current/03_gpu_train.slurm"
     exit 1
 fi
 

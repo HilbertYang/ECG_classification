@@ -9,25 +9,25 @@
 # PREREQUISITE: Run 01_setup_env.slurm first.
 #
 # HOW TO SUBMIT:
-#   sbatch slurm/02_demo_train.slurm
+#   sbatch slurm/current/02_demo_train.slurm
 #
 # HOW TO READ OUTPUT:
-#   cat logs/demo_train.out
+#   cat logs/current_demo_train.out
 #
 # WHAT TO EXPECT:
 #   Training loss printed each epoch, then a checkpoint saved
-#   to checkpoints/demo_baseline.pt
+#   to checkpoints/demo_lightweight.pt
 #------------------------------------------------------------
 
-#SBATCH --job-name=demo_train
+#SBATCH --job-name=demo_curr
 #SBATCH --partition=main               # CPU queue — no GPU needed for demo
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8GB
 #SBATCH --time=00:15:00
-#SBATCH --output=logs/demo_train.out
-#SBATCH --error=logs/demo_train.err
+#SBATCH --output=logs/current_demo_train.out
+#SBATCH --error=logs/current_demo_train.err
 
 set -e
 
@@ -55,19 +55,19 @@ echo ""
 echo "Starting training ..."
 python -m src.train \
     --demo \
-    --run-name demo_baseline \
+    --run-name demo_lightweight \
     --epochs 10
 
 echo ""
 echo "--- Evaluating on demo data ---"
 python -m src.evaluate \
-    --checkpoint checkpoints/demo_baseline.pt \
+    --checkpoint checkpoints/demo_lightweight.pt \
     --demo
 
 echo ""
 echo "--- Running single-sample inference ---"
 python -m src.inference \
-    --checkpoint checkpoints/demo_baseline.pt \
+    --checkpoint checkpoints/demo_lightweight.pt \
     --demo \
     --index 0
 
@@ -79,4 +79,4 @@ echo "============================================"
 echo "Finished: $(date)"
 echo ""
 echo "NEXT STEP: For real data, run:"
-echo "  sbatch slurm/03_gpu_train.slurm"
+echo "  sbatch slurm/current/03_gpu_train.slurm"

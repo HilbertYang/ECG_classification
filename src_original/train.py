@@ -21,7 +21,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=64, help="Batch size.")
     parser.add_argument("--learning-rate", type=float, default=1e-3, help="Adam learning rate.")
     parser.add_argument("--signal-length", type=int, default=256, help="Target ECG segment length.")
-    parser.add_argument("--kernel-size", type=int, default=7, help="Conv1d kernel size.")
+    parser.add_argument(
+        "--hidden-channels",
+        type=int,
+        nargs="+",
+        default=[16, 32, 64],
+        help="Conv channel sizes for the feature extractor.",
+    )
+    parser.add_argument("--dropout", type=float, default=0.2, help="Classifier dropout.")
     parser.add_argument("--val-ratio", type=float, default=0.15, help="Validation split ratio.")
     parser.add_argument("--test-ratio", type=float, default=0.15, help="Test split ratio.")
     parser.add_argument("--normal-label", type=int, default=0, help="Label value mapped to class 0.")
@@ -105,7 +112,8 @@ def main() -> None:
         input_channels=bundle.input_channels,
         signal_length=bundle.signal_length,
         num_classes=bundle.num_classes,
-        kernel_size=args.kernel_size,
+        hidden_channels=args.hidden_channels,
+        dropout=args.dropout,
     ).to(device)
 
     criterion = nn.CrossEntropyLoss()
@@ -130,7 +138,8 @@ def main() -> None:
         "batch_size": args.batch_size,
         "learning_rate": args.learning_rate,
         "signal_length": args.signal_length,
-        "kernel_size": args.kernel_size,
+        "hidden_channels": list(args.hidden_channels),
+        "dropout": args.dropout,
         "val_ratio": args.val_ratio,
         "test_ratio": args.test_ratio,
         "normal_label": args.normal_label,

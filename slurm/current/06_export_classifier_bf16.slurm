@@ -8,10 +8,10 @@
 # PREREQUISITE:
 #   - Run 01_setup_env.slurm first
 #   - Run 04_export_parts.slurm first, or otherwise make sure
-#     checkpoints/mitbih_baseline_classifier.pt exists
+#     checkpoints/mitbih_lightweight_classifier.pt exists
 #
 # HOW TO SUBMIT:
-#   sbatch slurm/06_export_classifier_bf16.slurm
+#   sbatch slurm/current/06_export_classifier_bf16.slurm
 #
 # OUTPUT:
 #   hardware_export/param_bf16/netfpga_classifier_bf16_meta.json
@@ -21,15 +21,15 @@
 #   hardware_export/param_bf16/netfpga_classifier_bias_bf16.mem
 #------------------------------------------------------------
 
-#SBATCH --job-name=export_bf16
+#SBATCH --job-name=bf16_curr
 #SBATCH --partition=main
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=4GB
 #SBATCH --time=00:10:00
-#SBATCH --output=logs/export_classifier_bf16.out
-#SBATCH --error=logs/export_classifier_bf16.err
+#SBATCH --output=logs/current_export_classifier_bf16.out
+#SBATCH --error=logs/current_export_classifier_bf16.err
 
 set -e
 
@@ -42,13 +42,13 @@ echo ""
 
 cd "$SLURM_SUBMIT_DIR"
 
-CLASSIFIER_CKPT="checkpoints/mitbih_baseline_classifier.pt"
+CLASSIFIER_CKPT="checkpoints/mitbih_lightweight_classifier.pt"
 OUT_DIR="hardware_export/param_bf16"
 
 if [ ! -f "$CLASSIFIER_CKPT" ]; then
     echo "ERROR: Classifier checkpoint not found: $CLASSIFIER_CKPT"
     echo "Run the split export first:"
-    echo "  sbatch slurm/04_export_parts.slurm"
+    echo "  sbatch slurm/current/04_export_parts.slurm"
     exit 1
 fi
 

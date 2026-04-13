@@ -8,11 +8,11 @@
 # PREREQUISITE: Run 01_setup_env.slurm first.
 #
 # HOW TO SUBMIT:
-#   sbatch slurm/03_gpu_train.slurm
+#   sbatch slurm/original/03_gpu_train.slurm
 #
 # HOW TO MONITOR:
 #   squeue --me                        # check if job is running
-#   tail -f logs/gpu_train.out         # watch output live
+#   tail -f logs/original_gpu_train.out # watch output live
 #
 # HOW TO CANCEL:
 #   scancel <JOB_ID>
@@ -22,7 +22,7 @@
 #   e.g. "ttrojan_123". Find yours with:  sacctmgr show user $USER
 #------------------------------------------------------------
 
-#SBATCH --job-name=ecg_gpu_train
+#SBATCH --job-name=ecg_orig_train
 #SBATCH --partition=gpu                # GPU queue
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -32,8 +32,8 @@
 #SBATCH --gres=gpu:1                  # Request 1 GPU
 ##SBATCH --account=YOUR_ACCOUNT       # Uncomment and fill in your account
 
-#SBATCH --output=logs/gpu_train.out
-#SBATCH --error=logs/gpu_train.err
+#SBATCH --output=logs/original_gpu_train.out
+#SBATCH --error=logs/original_gpu_train.err
 
 set -e
 
@@ -68,7 +68,7 @@ if [ -f "$DATASET" ]; then
 else
     echo "--- Preparing MIT-BIH dataset ---"
     mkdir -p data/processed
-    python -m src.prepare_mitbih \
+    python -m src_original.prepare_mitbih \
         --stream \
         --output "$DATASET"
     echo "Dataset saved to $DATASET"
@@ -77,17 +77,17 @@ echo ""
 
 # --- Step 2: Train ---
 echo "--- Training ---"
-python -m src.train \
+python -m src_original.train \
     --dataset "$DATASET" \
-    --run-name mitbih_baseline \
+    --run-name mitbih_original \
     --epochs 20
 
 echo ""
 
 # --- Step 3: Evaluate on the test split ---
 echo "--- Evaluation ---"
-python -m src.evaluate \
-    --checkpoint checkpoints/mitbih_baseline.pt \
+python -m src_original.evaluate \
+    --checkpoint checkpoints/mitbih_original.pt \
     --dataset "$DATASET" \
     --split test
 
@@ -95,8 +95,8 @@ echo ""
 
 # --- Step 4: Single-sample inference example ---
 echo "--- Inference (sample index 0) ---"
-python -m src.inference \
-    --checkpoint checkpoints/mitbih_baseline.pt \
+python -m src_original.inference \
+    --checkpoint checkpoints/mitbih_original.pt \
     --dataset "$DATASET" \
     --split test \
     --index 0

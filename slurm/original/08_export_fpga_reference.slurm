@@ -8,33 +8,33 @@
 #
 # PREREQUISITE:
 #   - Run 01_setup_env.slurm first
-#   - Train a model first so checkpoints/mitbih_baseline.pt exists
+#   - Train a model first so checkpoints/mitbih_original.pt exists
 #   - Have a processed dataset such as data/processed/mitbih_binary.npz
 #
 # HOW TO SUBMIT:
-#   sbatch slurm/08_export_fpga_reference.slurm
+#   sbatch slurm/original/08_export_fpga_reference.slurm
 #
 # OUTPUT:
-#   hardware_export/extracted_feature/mitbih_baseline_test_meta.json
-#   hardware_export/extracted_feature/mitbih_baseline_test_features_fp32.txt
-#   hardware_export/extracted_feature/mitbih_baseline_test_features_bf16.mem
-#   hardware_export/extracted_feature/mitbih_baseline_test_labels.txt
-#   hardware_export/extracted_feature/mitbih_baseline_test_fp32_logits.txt
-#   hardware_export/extracted_feature/mitbih_baseline_test_bf16_logits.txt
-#   hardware_export/extracted_feature/mitbih_baseline_test_fp32_pred.txt
-#   hardware_export/extracted_feature/mitbih_baseline_test_bf16_pred.txt
-#   hardware_export/extracted_feature/mitbih_baseline_test_reference_bundle.npz
+#   hardware_export/extracted_feature/mitbih_original_test_meta.json
+#   hardware_export/extracted_feature/mitbih_original_test_features_fp32.txt
+#   hardware_export/extracted_feature/mitbih_original_test_features_bf16.mem
+#   hardware_export/extracted_feature/mitbih_original_test_labels.txt
+#   hardware_export/extracted_feature/mitbih_original_test_fp32_logits.txt
+#   hardware_export/extracted_feature/mitbih_original_test_bf16_logits.txt
+#   hardware_export/extracted_feature/mitbih_original_test_fp32_pred.txt
+#   hardware_export/extracted_feature/mitbih_original_test_bf16_pred.txt
+#   hardware_export/extracted_feature/mitbih_original_test_reference_bundle.npz
 #------------------------------------------------------------
 
-#SBATCH --job-name=export_fpga_ref
+#SBATCH --job-name=fpga_orig
 #SBATCH --partition=main
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8GB
 #SBATCH --time=00:20:00
-#SBATCH --output=logs/export_fpga_reference.out
-#SBATCH --error=logs/export_fpga_reference.err
+#SBATCH --output=logs/original_export_fpga_reference.out
+#SBATCH --error=logs/original_export_fpga_reference.err
 
 set -e
 
@@ -47,21 +47,21 @@ echo ""
 
 cd "$SLURM_SUBMIT_DIR"
 
-FULL_CKPT="checkpoints/mitbih_baseline.pt"
+FULL_CKPT="checkpoints/mitbih_original.pt"
 DATASET="data/processed/mitbih_binary.npz"
 OUT_DIR="hardware_export/extracted_feature"
 
 if [ ! -f "$FULL_CKPT" ]; then
     echo "ERROR: Full checkpoint not found: $FULL_CKPT"
     echo "Train the model first:"
-    echo "  sbatch slurm/03_gpu_train.slurm"
+    echo "  sbatch slurm/original/03_gpu_train.slurm"
     exit 1
 fi
 
 if [ ! -f "$DATASET" ]; then
     echo "ERROR: Processed dataset not found: $DATASET"
     echo "Prepare the dataset first or rerun:"
-    echo "  sbatch slurm/03_gpu_train.slurm"
+    echo "  sbatch slurm/original/03_gpu_train.slurm"
     exit 1
 fi
 
@@ -76,7 +76,7 @@ echo ""
 mkdir -p "$OUT_DIR"
 
 echo "--- Exporting test split CNN features and software references ---"
-python -m src.export_fpga_reference \
+python -m src_original.export_fpga_reference \
     --checkpoint "$FULL_CKPT" \
     --dataset "$DATASET" \
     --split test \
@@ -86,6 +86,6 @@ python -m src.export_fpga_reference \
 echo ""
 echo "============================================"
 echo "  Exported FPGA reference files:"
-ls -lh "$OUT_DIR"/mitbih_baseline_test*
+ls -lh "$OUT_DIR"/mitbih_original_test*
 echo "============================================"
 echo "Finished: $(date)"

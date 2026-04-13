@@ -7,24 +7,24 @@
 #          Run this ONCE before any training jobs.
 #
 # HOW TO SUBMIT:
-#   sbatch slurm/01_setup_env.slurm
+#   sbatch slurm/current/01_setup_env.slurm
 #
 # HOW TO READ OUTPUT:
-#   cat logs/setup_env.out
+#   cat logs/current_setup_env.out
 #
 # NOTE: This can take 5-10 minutes because pip downloads
 #       PyTorch and other large packages.
 #------------------------------------------------------------
 
-#SBATCH --job-name=setup_env
+#SBATCH --job-name=setup_curr
 #SBATCH --partition=main
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4              # More CPUs = faster pip install
 #SBATCH --mem=8GB
 #SBATCH --time=00:30:00                # Give it 30 min to download/install
-#SBATCH --output=logs/setup_env.out
-#SBATCH --error=logs/setup_env.err
+#SBATCH --output=logs/current_setup_env.out
+#SBATCH --error=logs/current_setup_env.err
 
 # Exit immediately if any command fails
 # This way the log will clearly show where things went wrong
@@ -83,5 +83,5 @@ echo "============================================"
 echo ""
 echo "Setup complete at: $(date)"
 echo ""
-echo "NEXT STEP: Run the demo training job:"
-echo "  sbatch slurm/02_demo_train.slurm"
+echo "NEXT STEP: Run the current-version demo training job:"
+echo "  sbatch slurm/current/02_demo_train.slurm"

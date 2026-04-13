@@ -6,27 +6,27 @@
 #          and make sure Python is available.
 #
 # HOW TO SUBMIT:
-#   sbatch slurm/00_hello_carc.slurm
+#   sbatch slurm/original/00_hello_carc.slurm
 #
 # HOW TO CHECK STATUS:
 #   squeue --me
 #
 # HOW TO READ OUTPUT:
-#   cat logs/hello_carc.out
+#   cat logs/original_hello_carc.out
 #------------------------------------------------------------
 
 # --- SLURM directives (lines starting with #SBATCH) ---
 # These tell the scheduler what resources you need.
 
-#SBATCH --job-name=hello_carc          # Name shown in squeue
+#SBATCH --job-name=hello_orig          # Name shown in squeue
 #SBATCH --partition=main               # Queue to submit to (main = general CPU)
 #SBATCH --nodes=1                      # Number of compute nodes
 #SBATCH --ntasks=1                     # Number of tasks (processes)
 #SBATCH --cpus-per-task=1              # CPU cores per task
 #SBATCH --mem=4GB                      # RAM
 #SBATCH --time=00:05:00                # Max wall time (HH:MM:SS)
-#SBATCH --output=logs/hello_carc.out   # Where stdout goes
-#SBATCH --error=logs/hello_carc.err    # Where stderr goes
+#SBATCH --output=logs/original_hello_carc.out   # Where stdout goes
+#SBATCH --error=logs/original_hello_carc.err    # Where stderr goes
 
 # --- Your shell commands start here ---
 

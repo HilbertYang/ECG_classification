@@ -2,15 +2,19 @@
 
 Software-first starter repository for binary ECG classification. This repo turns the proposal guide into a runnable baseline: load data, preprocess signals, train a small 1D CNN, evaluate results, and keep the final classifier boundary explicit for later hardware mapping.
 
+## Code paths
+
+This repository now keeps two usable software paths side by side:
+
+- `src_original/`: the original baseline implementation, including the earlier multi-layer CNN design and the original command paths from the first version of the project
+- `src/`: the current lightweight implementation, simplified to better match a hardware-friendly deployment path
+
+If you are following older notes, older screenshots, or earlier commands from this project, replace `src/...` with `src_original/...` conceptually and use `python3 -m src_original.<module>` at the command line. New work should usually use `src/`.
+
 ## What is in the repo
 
-- `src/data_loader.py`: dataset loading, demo-data generation, and PyTorch dataloaders
-- `src/preprocess.py`: signal shaping, normalization, binary label conversion, and dataset splits
-- `src/model.py`: small feature extractor plus a separate final classifier layer
-- `src/train.py`: end-to-end training loop and checkpoint saving
-- `src/evaluate.py`: held-out evaluation with confusion matrix, precision, recall, and F1
-- `src/inference.py`: single-sample prediction and feature-vector inspection
-- `src/export_parts.py`: split a trained checkpoint into separate feature extractor and classifier files
+- `src_original/`: original baseline pipeline and original model implementation
+- `src/`: current lightweight pipeline and current model implementation
 - `data/README.md`: expected dataset format for the first software prototype
 - `EE533_software_first_implementation_guide.docx`: original planning document
 
@@ -23,37 +27,26 @@ Build a binary classifier for `normal` vs `abnormal` ECG segments on a regular c
 
 That interface is the first candidate for later GPU mapping.
 
-## Current model architecture
+## Model variants
 
-The baseline model is a small 1D CNN for binary ECG classification. By default, training resizes each ECG segment to length `256`, and single-channel inputs are shaped as `(batch, 1, 256)`.
+Both versions default to ECG segments of length `256`, with single-channel inputs shaped as `(batch, 1, 256)`.
 
-The current default network in `src/model.py` is:
+### Current lightweight model in `src/model.py`
+
+The current implementation keeps the same high-level split between `feature_extractor` and `classifier`, but simplifies the network so it is easier to map to hardware.
 
 ```text
 Input: (batch, 1, 256)
 
 Feature extractor:
-- Conv1d(1 -> 16, kernel_size=7, padding=3)
-- BatchNorm1d(16)
+- Conv1d(1 -> 1, kernel_size=7, padding=3)
+- BatchNorm1d(1)
 - ReLU
 - MaxPool1d(2)
-
-- Conv1d(16 -> 32, kernel_size=7, padding=3)
-- BatchNorm1d(32)
-- ReLU
-- MaxPool1d(2)
-
-- Conv1d(32 -> 64, kernel_size=7, padding=3)
-- BatchNorm1d(64)
-- ReLU
-- MaxPool1d(2)
-
-- AdaptiveAvgPool1d(1)
 - Flatten
 
 Classifier:
-- Dropout(0.2)
-- Linear(64 -> 2)
+- Linear(128 -> 2)
 
 Output:
 - logits with shape (batch, 2)
@@ -63,22 +56,46 @@ With the default input length of `256`, the tensor shape changes like this:
 
 ```text
 (batch, 1, 256)
--> (batch, 16, 256)
--> (batch, 16, 128)
--> (batch, 32, 128)
--> (batch, 32, 64)
--> (batch, 64, 64)
--> (batch, 64, 32)
--> (batch, 64, 1)
--> (batch, 64)
+-> (batch, 1, 256)
+-> (batch, 1, 128)
+-> (batch, 128)
 -> (batch, 2)
 ```
 
 Intuition:
 
-- `Conv1d` increases the number of learned feature channels.
+- `Conv1d` learns a single filtered ECG channel.
 - `MaxPool1d(2)` halves the signal length while keeping the strongest local response in each window.
-- `AdaptiveAvgPool1d(1)` compresses each channel into one value, producing a final `64`-dimensional feature vector for the classifier.
+- `Flatten` turns the pooled waveform into a `128`-dimensional feature vector for the classifier.
+
+### Original baseline model in `src_original/model.py`
+
+The original baseline is still preserved in `src_original/`. That version uses a deeper 3-layer CNN:
+
+```text
+Input: (batch, 1, 256)
+
+Feature extractor:
+- Conv1d(1 -> 16, kernel_size=7, padding=3)
+- BatchNorm1d(16)
+- ReLU
+- MaxPool1d(2)
+- Conv1d(16 -> 32, kernel_size=7, padding=3)
+- BatchNorm1d(32)
+- ReLU
+- MaxPool1d(2)
+- Conv1d(32 -> 64, kernel_size=7, padding=3)
+- BatchNorm1d(64)
+- ReLU
+- MaxPool1d(2)
+- AdaptiveAvgPool1d(1)
+- Flatten
+
+Classifier:
+- Linear(64 -> 2)
+```
+
+Use `src_original/` if you want the earlier software baseline behavior. Use `src/` if you want the current hardware-oriented lightweight path.
 
 ## Quick start
 
@@ -88,18 +105,26 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Run a smoke test without a real dataset:
+Run a smoke test with the current lightweight implementation:
 
 ```bash
-python -m src.train --demo --run-name demo_baseline --epochs 5
-python -m src.evaluate --checkpoint checkpoints/demo_baseline.pt --demo
-python -m src.inference --checkpoint checkpoints/demo_baseline.pt --demo --index 0
+python3 -m src.train --demo --run-name demo_lightweight --epochs 5
+python3 -m src.evaluate --checkpoint checkpoints/demo_lightweight.pt --demo
+python3 -m src.inference --checkpoint checkpoints/demo_lightweight.pt --demo --index 0
+```
+
+Run the same smoke test with the original baseline implementation:
+
+```bash
+python3 -m src_original.train --demo --run-name demo_original --epochs 5
+python3 -m src_original.evaluate --checkpoint checkpoints/demo_original.pt --demo
+python3 -m src_original.inference --checkpoint checkpoints/demo_original.pt --demo --index 0
 ```
 
 Prepare a real MIT-BIH beat dataset in `.npz` format:
 
 ```bash
-python -m src.prepare_mitbih --download --output data/processed/mitbih_binary.npz
+python3 -m src.prepare_mitbih --download --output data/processed/mitbih_binary.npz
 ```
 
 This script downloads MIT-BIH Arrhythmia Database records into `data/raw/mitdb/`, extracts fixed-length beat-centered ECG segments, and writes a training-ready dataset with:
@@ -110,32 +135,40 @@ This script downloads MIT-BIH Arrhythmia Database records into `data/raw/mitdb/`
 Useful variants:
 
 ```bash
-python -m src.prepare_mitbih --download --records 100 101 102
-python -m src.prepare_mitbih --stream --records 100 --output data/processed/mitbih_100_binary.npz
-python -m src.prepare_mitbih --download --normal-symbols N L R e j
+python3 -m src.prepare_mitbih --download --records 100 101 102
+python3 -m src.prepare_mitbih --stream --records 100 --output data/processed/mitbih_100_binary.npz
+python3 -m src.prepare_mitbih --download --normal-symbols N L R e j
 ```
 
-Run with a real processed dataset:
+Run the current lightweight model with a real processed dataset:
 
 ```bash
-python -m src.train --dataset data/processed/mitbih_binary.npz --run-name mitbih_baseline
-python -m src.evaluate --checkpoint checkpoints/mitbih_baseline.pt --dataset data/processed/mitbih_binary.npz
-python -m src.inference --checkpoint checkpoints/mitbih_baseline.pt --dataset data/processed/mitbih_binary.npz --split test --index 0
+python3 -m src.train --dataset data/processed/mitbih_binary.npz --run-name mitbih_lightweight
+python3 -m src.evaluate --checkpoint checkpoints/mitbih_lightweight.pt --dataset data/processed/mitbih_binary.npz
+python3 -m src.inference --checkpoint checkpoints/mitbih_lightweight.pt --dataset data/processed/mitbih_binary.npz --split test --index 0
+```
+
+Run the original baseline model with the same dataset:
+
+```bash
+python3 -m src_original.train --dataset data/processed/mitbih_binary.npz --run-name mitbih_original
+python3 -m src_original.evaluate --checkpoint checkpoints/mitbih_original.pt --dataset data/processed/mitbih_binary.npz
+python3 -m src_original.inference --checkpoint checkpoints/mitbih_original.pt --dataset data/processed/mitbih_binary.npz --split test --index 0
 ```
 
 Export the trained model as two separate parts for hardware mapping:
 
 ```bash
-python -m src.export_parts --checkpoint checkpoints/mitbih_baseline.pt
+python3 -m src.export_parts --checkpoint checkpoints/mitbih_lightweight.pt
 ```
 
-This saves `checkpoints/mitbih_baseline_feature_extractor.pt` (the 1D CNN) and `checkpoints/mitbih_baseline_classifier.pt` (the linear head) as independent state dicts.
+This saves `checkpoints/mitbih_lightweight_feature_extractor.pt` (the lightweight CNN feature extractor) and `checkpoints/mitbih_lightweight_classifier.pt` (the linear head) as independent state dicts.
 
 Export the classifier into FPGA-friendly files:
 
 ```bash
-python -m src.export_classifier_hw \
-  --classifier-checkpoint checkpoints/mitbih_baseline_classifier.pt \
+python3 -m src.export_classifier_hw \
+  --classifier-checkpoint checkpoints/mitbih_lightweight_classifier.pt \
   --out-dir hardware_export/param_fp32 \
   --prefix netfpga_classifier \
   --layout row-major \
@@ -153,16 +186,16 @@ This writes:
 
 For the current model, the hardware classifier contract is:
 
-- input feature vector: length `64`
-- weight matrix: shape `(2, 64)`
+- input feature vector: length `128`
+- weight matrix: shape `(2, 128)`
 - bias vector: shape `(2,)`
 - math: `logits = W * features + b`
 
 Export the classifier as BF16 files for a BF16-capable hardware path:
 
 ```bash
-python -m src.export_classifier_bf16 \
-  --classifier-checkpoint checkpoints/mitbih_baseline_classifier.pt \
+python3 -m src.export_classifier_bf16 \
+  --classifier-checkpoint checkpoints/mitbih_lightweight_classifier.pt \
   --out-dir hardware_export/param_bf16 \
   --prefix netfpga_classifier \
   --layout row-major
@@ -176,8 +209,8 @@ This writes BF16 memory files such as:
 Compare the original FP32 classifier against a BF16-emulated classifier before changing training:
 
 ```bash
-python -m src.emulate_classifier_bf16 \
-  --checkpoint checkpoints/mitbih_baseline.pt \
+python3 -m src.emulate_classifier_bf16 \
+  --checkpoint checkpoints/mitbih_lightweight.pt \
   --dataset data/processed/mitbih_binary.npz \
   --split test \
   --accumulation fp32
@@ -188,8 +221,8 @@ This reports how much BF16 storage changes the logits and whether the final pred
 Export CNN output features for FPGA input together with software reference logits and predictions:
 
 ```bash
-python -m src.export_fpga_reference \
-  --checkpoint checkpoints/mitbih_baseline.pt \
+python3 -m src.export_fpga_reference \
+  --checkpoint checkpoints/mitbih_lightweight.pt \
   --dataset data/processed/mitbih_binary.npz \
   --split test \
   --max-samples 128 \
@@ -212,8 +245,8 @@ This writes:
 For a tiny hardware-debug subset, you can export a specific MIT-BIH record directly from dataset order:
 
 ```bash
-python -m src.export_fpga_reference \
-  --checkpoint checkpoints/mitbih_baseline.pt \
+python3 -m src.export_fpga_reference \
+  --checkpoint checkpoints/mitbih_lightweight.pt \
   --dataset data/processed/mitbih_binary.npz \
   --record-id 100 \
   --first-n-beats 16 \
@@ -327,16 +360,42 @@ ECG_classification/
 ├── notebooks/
 ├── results/
 ├── slurm/
-│   ├── 01_setup_env.slurm
-│   ├── 02_demo_train.slurm
-│   ├── 03_gpu_train.slurm
-│   ├── 04_export_parts.slurm
-│   ├── 05_export_classifier_hw.slurm
-│   ├── 06_export_classifier_bf16.slurm
-│   ├── 07_emulate_classifier_bf16.slurm
-│   ├── 08_export_fpga_reference.slurm
-│   └── 09_export_fpga_reference_mini.slurm
+│   ├── current/
+│   │   ├── 01_setup_env.slurm
+│   │   ├── 02_demo_train.slurm
+│   │   ├── 03_gpu_train.slurm
+│   │   ├── 04_export_parts.slurm
+│   │   ├── 05_export_classifier_hw.slurm
+│   │   ├── 06_export_classifier_bf16.slurm
+│   │   ├── 07_emulate_classifier_bf16.slurm
+│   │   ├── 08_export_fpga_reference.slurm
+│   │   └── 09_export_fpga_reference_mini.slurm
+│   └── original/
+│       ├── 01_setup_env.slurm
+│       ├── 02_demo_train.slurm
+│       ├── 03_gpu_train.slurm
+│       ├── 04_export_parts.slurm
+│       ├── 05_export_classifier_hw.slurm
+│       ├── 06_export_classifier_bf16.slurm
+│       ├── 07_emulate_classifier_bf16.slurm
+│       ├── 08_export_fpga_reference.slurm
+│       └── 09_export_fpga_reference_mini.slurm
 ├── src/
+│   ├── __init__.py
+│   ├── data_loader.py
+│   ├── bf16_utils.py
+│   ├── evaluate.py
+│   ├── emulate_classifier_bf16.py
+│   ├── export_classifier_bf16.py
+│   ├── export_classifier_hw.py
+│   ├── export_fpga_reference.py
+│   ├── export_parts.py
+│   ├── inference.py
+│   ├── model.py
+│   ├── prepare_mitbih.py
+│   ├── preprocess.py
+│   └── train.py
+├── src_original/
 │   ├── __init__.py
 │   ├── data_loader.py
 │   ├── bf16_utils.py

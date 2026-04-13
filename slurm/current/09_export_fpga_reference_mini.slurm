@@ -8,11 +8,11 @@
 #
 # PREREQUISITE:
 #   - Run 01_setup_env.slurm first
-#   - Train a model first so checkpoints/mitbih_baseline.pt exists
+#   - Train a model first so checkpoints/mitbih_lightweight.pt exists
 #   - Have a processed dataset such as data/processed/mitbih_binary.npz
 #
 # HOW TO SUBMIT:
-#   sbatch slurm/09_export_fpga_reference_mini.slurm
+#   sbatch slurm/current/09_export_fpga_reference_mini.slurm
 #
 # OUTPUT:
 #   hardware_export/mini_feature/mini_mitbih_record_*_*beats_meta.json
@@ -23,15 +23,15 @@
 #   hardware_export/mini_feature/mini_mitbih_record_*_*beats_bf16_pred.txt
 #------------------------------------------------------------
 
-#SBATCH --job-name=export_fpga_mini
+#SBATCH --job-name=mini_curr
 #SBATCH --partition=main
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=4GB
 #SBATCH --time=00:10:00
-#SBATCH --output=logs/export_fpga_reference_mini.out
-#SBATCH --error=logs/export_fpga_reference_mini.err
+#SBATCH --output=logs/current_export_fpga_reference_mini.out
+#SBATCH --error=logs/current_export_fpga_reference_mini.err
 
 set -e
 
@@ -44,7 +44,7 @@ echo ""
 
 cd "$SLURM_SUBMIT_DIR"
 
-FULL_CKPT="checkpoints/mitbih_baseline.pt"
+FULL_CKPT="checkpoints/mitbih_lightweight.pt"
 DATASET="data/processed/mitbih_binary.npz"
 OUT_DIR="hardware_export/mini_feature"
 RECORD_ID="100"
@@ -54,14 +54,14 @@ PREFIX="mini_mitbih_record_100_16beats"
 if [ ! -f "$FULL_CKPT" ]; then
     echo "ERROR: Full checkpoint not found: $FULL_CKPT"
     echo "Train the model first:"
-    echo "  sbatch slurm/03_gpu_train.slurm"
+    echo "  sbatch slurm/current/03_gpu_train.slurm"
     exit 1
 fi
 
 if [ ! -f "$DATASET" ]; then
     echo "ERROR: Processed dataset not found: $DATASET"
     echo "Prepare the dataset first or rerun:"
-    echo "  sbatch slurm/03_gpu_train.slurm"
+    echo "  sbatch slurm/current/03_gpu_train.slurm"
     exit 1
 fi
 
