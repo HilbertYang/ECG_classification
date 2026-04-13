@@ -364,12 +364,10 @@ ECG_classification/
 │   │   ├── 01_setup_env.slurm
 │   │   ├── 02_demo_train.slurm
 │   │   ├── 03_gpu_train.slurm
-│   │   ├── 04_export_parts.slurm
-│   │   ├── 05_export_classifier_hw.slurm
-│   │   ├── 06_export_classifier_bf16.slurm
 │   │   ├── 07_emulate_classifier_bf16.slurm
 │   │   ├── 08_export_fpga_reference.slurm
-│   │   └── 09_export_fpga_reference_mini.slurm
+│   │   ├── 09_export_fpga_reference_mini.slurm
+│   │   └── 10_export_fused_frontend_hw.slurm
 │   └── original/
 │       ├── 01_setup_env.slurm
 │       ├── 02_demo_train.slurm
