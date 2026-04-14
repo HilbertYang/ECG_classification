@@ -178,6 +178,7 @@ For the current hardware debug flow, the most important outputs are:
 - `hardware_export/fused_frontend_bf16/`: BF16 fused CNN and classifier parameters
 - `hardware_export/input_bf16/`: BF16 raw input windows, including record 200 first 4 beats
 - `hardware_export/mini_feature/`: software golden outputs for the same tiny debug subset
+- `hardware_export/mini_feature/original/`: archived older mini-feature exports kept separate from the current active subset
 
 Prepare a real MIT-BIH beat dataset in `.npz` format:
 
@@ -331,7 +332,12 @@ hardware_export/
     ├── mini_mitbih_record_200_4beats_fp32_logits.txt
     ├── mini_mitbih_record_200_4beats_fp32_pred.txt
     ├── mini_mitbih_record_200_4beats_labels.txt
-    └── mini_mitbih_record_200_4beats_meta.json
+    ├── mini_mitbih_record_200_4beats_meta.json
+    └── original/
+        ├── record100_16/
+        ├── record100_32/
+        ├── record200_4/
+        └── record200_32/
 ```
 
 What each folder is for:
@@ -340,6 +346,7 @@ What each folder is for:
 - `hardware_export/fused_frontend_bf16/`: BF16 fused CNN parameters plus BF16 classifier parameters
 - `hardware_export/input_bf16/`: BF16 raw model inputs for hardware input testing
 - `hardware_export/mini_feature/`: software golden outputs for the record 200 first-4-beats debug subset
+- `hardware_export/mini_feature/original/`: archived older mini-feature exports from previous experiments
 
 What the files are for:
 
@@ -361,6 +368,8 @@ Recommended comparison flow:
 2. Feed the FPGA with raw BF16 inputs from `input_bf16/mini_mitbih_record_200_4beats_input_bf16.mem`.
 3. Compare the hardware frontend output or final classes against the software golden files in `mini_feature/`.
 4. Use `*_meta.json` when you need exact tensor shapes, kernel sizes, or sample counts.
+
+Treat the top level of `mini_feature/` as the current active debug subset. Older mini-feature exports are intentionally kept under `mini_feature/original/` so they do not get mixed with the current record 200 first-4-beats files.
 
 ## Expected dataset format
 
@@ -461,6 +470,7 @@ ECG_classification/
 - Current BF16 hardware parameters are saved under `hardware_export/fused_frontend_bf16/`
 - Current BF16 raw input windows are saved under `hardware_export/input_bf16/`
 - Current software golden reference files for record 200 first 4 beats are saved under `hardware_export/mini_feature/`
+- Archived older mini-feature exports are saved under `hardware_export/mini_feature/original/`
 
 ## Current key paths
 
@@ -479,6 +489,11 @@ If you are working on the current hardware debug flow, these are the most import
 - Current software golden outputs for the same 4 beats:
   `hardware_export/mini_feature/mini_mitbih_record_200_4beats_fp32_logits.txt`
   `hardware_export/mini_feature/mini_mitbih_record_200_4beats_fp32_pred.txt`
+- Archived older mini-feature directories:
+  `hardware_export/mini_feature/original/record100_16/`
+  `hardware_export/mini_feature/original/record100_32/`
+  `hardware_export/mini_feature/original/record200_4/`
+  `hardware_export/mini_feature/original/record200_32/`
 
 ## Next steps
 
