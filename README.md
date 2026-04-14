@@ -308,10 +308,13 @@ This writes BF16 model inputs with shape `(4, 1, 256)` together with labels and 
 
 ## Current `hardware_export/` layout
 
-The current repository organizes hardware-facing artifacts into three subdirectories:
+The current repository mainly uses these hardware-facing subdirectories:
 
 ```text
 hardware_export/
+├── extracted_feature/
+│   ├── <optional full-test export files from 05_export_fpga_reference>
+│   └── ...
 ├── fused_frontend_bf16/
 │   ├── ecg_fused_frontend_bf16_meta.json
 │   ├── ecg_fused_frontend_conv_weight_bf16.mem
@@ -333,6 +336,7 @@ hardware_export/
 
 What each folder is for:
 
+- `hardware_export/extracted_feature/`: optional full test-split software golden references from `05_export_fpga_reference`
 - `hardware_export/fused_frontend_bf16/`: BF16 fused CNN parameters plus BF16 classifier parameters
 - `hardware_export/input_bf16/`: BF16 raw model inputs for hardware input testing
 - `hardware_export/mini_feature/`: software golden outputs for the record 200 first-4-beats debug subset
@@ -387,9 +391,9 @@ ECG_classification/
 │   ├── raw/
 │   └── README.md
 ├── hardware_export/
-│   ├── extracted_feature/
-│   ├── param_bf16/
-│   └── param_fp32/
+│   ├── fused_frontend_bf16/
+│   ├── input_bf16/
+│   └── mini_feature/
 ├── logs/
 ├── notebooks/
 ├── results/
@@ -454,7 +458,27 @@ ECG_classification/
 - Checkpoints are saved to `checkpoints/<run_name>.pt`
 - Training summaries are saved to `results/<run_name>_train.json`
 - Evaluation summaries are saved to `results/<checkpoint_stem>_<split>_metrics.json`
-- Exported parts are saved to `checkpoints/<run_name>_feature_extractor.pt` and `checkpoints/<run_name>_classifier.pt`
+- Current BF16 hardware parameters are saved under `hardware_export/fused_frontend_bf16/`
+- Current BF16 raw input windows are saved under `hardware_export/input_bf16/`
+- Current software golden reference files for record 200 first 4 beats are saved under `hardware_export/mini_feature/`
+
+## Current key paths
+
+If you are working on the current hardware debug flow, these are the most important files:
+
+- Current BF16 fused parameters:
+  `hardware_export/fused_frontend_bf16/ecg_fused_frontend_conv_weight_bf16.mem`
+- Current BF16 fused conv bias:
+  `hardware_export/fused_frontend_bf16/ecg_fused_frontend_conv_bias_bf16.mem`
+- Current BF16 classifier weights:
+  `hardware_export/fused_frontend_bf16/ecg_fused_frontend_classifier_weight_bf16.mem`
+- Current BF16 classifier bias:
+  `hardware_export/fused_frontend_bf16/ecg_fused_frontend_classifier_bias_bf16.mem`
+- Current BF16 raw inputs for record 200 first 4 beats:
+  `hardware_export/input_bf16/mini_mitbih_record_200_4beats_input_bf16.mem`
+- Current software golden outputs for the same 4 beats:
+  `hardware_export/mini_feature/mini_mitbih_record_200_4beats_fp32_logits.txt`
+  `hardware_export/mini_feature/mini_mitbih_record_200_4beats_fp32_pred.txt`
 
 ## Next steps
 
