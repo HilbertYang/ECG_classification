@@ -293,6 +293,53 @@ This also writes:
 - `<prefix>_beat_symbols.txt`
 - `<prefix>_beat_samples.txt`
 
+Run the pure Python BF16 hardware simulation against the same tiny debug subset:
+
+```bash
+python3 -m src.hw_sim_bf16
+```
+
+Add `--verbose` to also print the first 16 values of every intermediate stage (conv output, relu output, pool output, feature vector):
+
+```bash
+python3 -m src.hw_sim_bf16 --verbose
+```
+
+`src/hw_sim_bf16.py` is a zero-dependency pure Python model of the full hardware pipeline. It loads the BF16 parameter `.mem` files and the BF16 input `.mem` file directly, then executes each stage using hand-written BF16 primitives with no PyTorch or NumPy:
+
+```text
+input (BF16, 256 samples)
+  -> Conv1d    7-tap MAC, each mul and each add truncated to BF16
+  -> ReLU      exact comparison, no rounding
+  -> MaxPool   exact max of 2 adjacent values, no rounding
+  -> Flatten   128 BF16 values
+  -> Linear    128-tap MAC, same BF16 truncation rule
+  -> logits    2 BF16 values
+```
+
+The BF16 arithmetic rules are:
+
+```python
+bf16_mul(a, b)       = fp32_to_bf16(a * b)        # truncate product
+bf16_add(a, b)       = fp32_to_bf16(a + b)        # truncate sum
+bf16_mac(acc, a, b)  = bf16_add(acc, bf16_mul(a, b))
+```
+
+Known results for record 200 first 4 beats:
+
+| Beat | Symbol | Label | Sim pred | Correct |
+|------|--------|-------|----------|---------|
+| 1 | V | 1 | 1 | yes |
+| 2 | N | 0 | 0 | yes |
+| 3 | V | 1 | 1 | yes |
+| 4 | N | 0 | 0 | yes |
+
+- Accuracy: 4/4 (100%), same as PyTorch FP32 and BF16-emulated references
+- Max logit |diff| vs PyTorch BF16 emul: ~0.48
+- Feature vector mean |diff| vs FP32: ~0.015
+
+The logit gap versus the PyTorch "BF16 emul" baseline is expected and not a bug. The PyTorch reference accumulates the FC dot-product in FP32 and only truncates at storage time. This simulation truncates after every individual add in the 128-tap MAC chain. The classification decision is identical in both cases.
+
 Export raw model inputs as BF16 for the same tiny hardware-debug subset:
 
 ```bash
@@ -436,6 +483,7 @@ ECG_classification/
 │   ├── export_classifier_hw.py
 │   ├── export_fpga_reference.py
 │   ├── export_parts.py
+│   ├── hw_sim_bf16.py
 │   ├── inference.py
 │   ├── model.py
 │   ├── prepare_mitbih.py
