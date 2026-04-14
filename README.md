@@ -121,6 +121,64 @@ python3 -m src_original.evaluate --checkpoint checkpoints/demo_original.pt --dem
 python3 -m src_original.inference --checkpoint checkpoints/demo_original.pt --demo --index 0
 ```
 
+## Current workflow
+
+If you are using the current lightweight BF16-oriented path, the recommended order is:
+
+1. Set up the environment:
+
+```bash
+sbatch slurm/current/01_setup_env.slurm
+```
+
+2. Run a quick smoke test if needed:
+
+```bash
+sbatch slurm/current/02_demo_train.slurm
+```
+
+3. Train the real model:
+
+```bash
+sbatch slurm/current/03_gpu_train.slurm
+```
+
+4. Optional software-side BF16 verification:
+
+```bash
+sbatch slurm/current/04_emulate_classifier_bf16.slurm
+```
+
+5. Export software reference data for hardware comparison:
+
+```bash
+sbatch slurm/current/05_export_fpga_reference.slurm
+```
+
+6. Export a tiny debug subset from record 200:
+
+```bash
+sbatch slurm/current/06_export_fpga_reference_mini_record200_4.slurm
+```
+
+7. Export fused frontend parameters as BF16:
+
+```bash
+sbatch slurm/current/07_export_fused_frontend_bf16.slurm
+```
+
+8. Export the corresponding raw BF16 inputs for record 200 first 4 beats:
+
+```bash
+sbatch slurm/current/08_export_input_bf16_record200_4.slurm
+```
+
+For the current hardware debug flow, the most important outputs are:
+
+- `hardware_export/fused_frontend_bf16/`: BF16 fused CNN and classifier parameters
+- `hardware_export/input_bf16/`: BF16 raw input windows, including record 200 first 4 beats
+- `hardware_export/mini_feature/`: software golden outputs for the same tiny debug subset
+
 Prepare a real MIT-BIH beat dataset in `.npz` format:
 
 ```bash
@@ -156,34 +214,6 @@ python3 -m src_original.evaluate --checkpoint checkpoints/mitbih_original.pt --d
 python3 -m src_original.inference --checkpoint checkpoints/mitbih_original.pt --dataset data/processed/mitbih_binary.npz --split test --index 0
 ```
 
-Export the trained model as two separate parts for hardware mapping:
-
-```bash
-python3 -m src.export_parts --checkpoint checkpoints/mitbih_lightweight.pt
-```
-
-This saves `checkpoints/mitbih_lightweight_feature_extractor.pt` (the lightweight CNN feature extractor) and `checkpoints/mitbih_lightweight_classifier.pt` (the linear head) as independent state dicts.
-
-Export the classifier into FPGA-friendly files:
-
-```bash
-python3 -m src.export_classifier_hw \
-  --classifier-checkpoint checkpoints/mitbih_lightweight_classifier.pt \
-  --out-dir hardware_export/param_fp32 \
-  --prefix netfpga_classifier \
-  --layout row-major \
-  --word-bits 16 \
-  --frac-bits 8
-```
-
-This writes:
-
-- `hardware_export/param_fp32/netfpga_classifier_meta.json`
-- `hardware_export/param_fp32/netfpga_classifier_weight_matrix.txt`
-- `hardware_export/param_fp32/netfpga_classifier_bias_float.txt`
-- `hardware_export/param_fp32/netfpga_classifier_weight_q16_8.mem`
-- `hardware_export/param_fp32/netfpga_classifier_bias_q16_8.mem`
-
 For the current model, the hardware classifier contract is:
 
 - input feature vector: length `128`
@@ -191,20 +221,21 @@ For the current model, the hardware classifier contract is:
 - bias vector: shape `(2,)`
 - math: `logits = W * features + b`
 
-Export the classifier as BF16 files for a BF16-capable hardware path:
+Export fused frontend parameters as BF16 files:
 
 ```bash
-python3 -m src.export_classifier_bf16 \
-  --classifier-checkpoint checkpoints/mitbih_lightweight_classifier.pt \
-  --out-dir hardware_export/param_bf16 \
-  --prefix netfpga_classifier \
-  --layout row-major
+python3 -m src.export_fused_frontend_bf16 \
+  --checkpoint checkpoints/mitbih_lightweight.pt \
+  --out-dir hardware_export/fused_frontend_bf16 \
+  --prefix ecg_fused_frontend
 ```
 
 This writes BF16 memory files such as:
 
-- `hardware_export/param_bf16/netfpga_classifier_weight_bf16.mem`
-- `hardware_export/param_bf16/netfpga_classifier_bias_bf16.mem`
+- `hardware_export/fused_frontend_bf16/ecg_fused_frontend_conv_weight_bf16.mem`
+- `hardware_export/fused_frontend_bf16/ecg_fused_frontend_conv_bias_bf16.mem`
+- `hardware_export/fused_frontend_bf16/ecg_fused_frontend_classifier_weight_bf16.mem`
+- `hardware_export/fused_frontend_bf16/ecg_fused_frontend_classifier_bias_bf16.mem`
 
 Compare the original FP32 classifier against a BF16-emulated classifier before changing training:
 
@@ -242,17 +273,17 @@ This writes:
 - `<prefix>_reference_bundle.npz`: all exported arrays in one bundle
 - `<prefix>_meta.json`: export summary and accuracy/agreement metrics
 
-For a tiny hardware-debug subset, you can export a specific MIT-BIH record directly from dataset order:
+For a tiny hardware-debug subset, you can export record 200 first 4 beats directly from dataset order:
 
 ```bash
 python3 -m src.export_fpga_reference \
   --checkpoint checkpoints/mitbih_lightweight.pt \
   --dataset data/processed/mitbih_binary.npz \
-  --record-id 100 \
-  --first-n-beats 16 \
+  --record-id 200 \
+  --first-n-beats 4 \
   --accumulation fp32 \
-  --out-dir hardware_export/extracted_feature \
-  --prefix mini_mitbih_record_100_16beats
+  --out-dir hardware_export/mini_feature \
+  --prefix mini_mitbih_record_200_4beats
 ```
 
 This also writes:
@@ -261,68 +292,71 @@ This also writes:
 - `<prefix>_beat_symbols.txt`
 - `<prefix>_beat_samples.txt`
 
+Export raw model inputs as BF16 for the same tiny hardware-debug subset:
+
+```bash
+python3 -m src.export_input_bf16 \
+  --checkpoint checkpoints/mitbih_lightweight.pt \
+  --dataset data/processed/mitbih_binary.npz \
+  --record-id 200 \
+  --first-n-beats 4 \
+  --out-dir hardware_export/input_bf16 \
+  --prefix mini_mitbih_record_200_4beats_input
+```
+
+This writes BF16 model inputs with shape `(4, 1, 256)` together with labels and beat metadata.
+
 ## Current `hardware_export/` layout
 
 The current repository organizes hardware-facing artifacts into three subdirectories:
 
 ```text
 hardware_export/
-├── extracted_feature/
-│   ├── mitbih_baseline_test_bf16_logits.txt
-│   ├── mitbih_baseline_test_bf16_pred.txt
-│   ├── mitbih_baseline_test_features_bf16.mem
-│   ├── mitbih_baseline_test_features_fp32.txt
-│   ├── mitbih_baseline_test_fp32_logits.txt
-│   ├── mitbih_baseline_test_fp32_pred.txt
-│   ├── mitbih_baseline_test_labels.txt
-│   ├── mitbih_baseline_test_meta.json
-│   └── mitbih_baseline_test_reference_bundle.npz
-├── param_bf16/
-│   ├── netfpga_classifier_bf16_meta.json
-│   ├── netfpga_classifier_bias_bf16.mem
-│   ├── netfpga_classifier_bias_bf16_float.txt
-│   ├── netfpga_classifier_weight_bf16.mem
-│   └── netfpga_classifier_weight_bf16_float.txt
-└── param_fp32/
-    ├── netfpga_classifier_bias_float.txt
-    ├── netfpga_classifier_bias_q16_8.mem
-    ├── netfpga_classifier_meta.json
-    ├── netfpga_classifier_weight_matrix.txt
-    └── netfpga_classifier_weight_q16_8.mem
+├── fused_frontend_bf16/
+│   ├── ecg_fused_frontend_bf16_meta.json
+│   ├── ecg_fused_frontend_conv_weight_bf16.mem
+│   ├── ecg_fused_frontend_conv_bias_bf16.mem
+│   ├── ecg_fused_frontend_classifier_weight_bf16.mem
+│   └── ecg_fused_frontend_classifier_bias_bf16.mem
+├── input_bf16/
+│   ├── mini_mitbih_record_200_4beats_input_bf16.mem
+│   ├── mini_mitbih_record_200_4beats_input_fp32.txt
+│   ├── mini_mitbih_record_200_4beats_input_labels.txt
+│   └── mini_mitbih_record_200_4beats_input_meta.json
+└── mini_feature/
+    ├── mini_mitbih_record_200_4beats_features_bf16.mem
+    ├── mini_mitbih_record_200_4beats_fp32_logits.txt
+    ├── mini_mitbih_record_200_4beats_fp32_pred.txt
+    ├── mini_mitbih_record_200_4beats_labels.txt
+    └── mini_mitbih_record_200_4beats_meta.json
 ```
 
 What each folder is for:
 
-- `hardware_export/param_fp32/`: classifier parameters exported for a fixed-point FPGA path
-- `hardware_export/param_bf16/`: classifier parameters exported for a BF16-capable FPGA or accelerator path
-- `hardware_export/extracted_feature/`: CNN output features plus software golden results for hardware comparison
+- `hardware_export/fused_frontend_bf16/`: BF16 fused CNN parameters plus BF16 classifier parameters
+- `hardware_export/input_bf16/`: BF16 raw model inputs for hardware input testing
+- `hardware_export/mini_feature/`: software golden outputs for the record 200 first-4-beats debug subset
 
 What the files are for:
 
-- `*_weight_matrix.txt`: human-readable floating-point classifier weights, useful for inspection and debugging
-- `*_bias_float.txt`: human-readable floating-point bias values
-- `*_weight_q16_8.mem`: fixed-point weight memory image for FPGA initialization
-- `*_bias_q16_8.mem`: fixed-point bias memory image for FPGA initialization
-- `*_weight_bf16.mem`: BF16 weight memory image for BF16 hardware input
-- `*_bias_bf16.mem`: BF16 bias memory image for BF16 hardware input
-- `*_weight_bf16_float.txt`: rounded BF16 weights converted back to float text for checking quantization effects
-- `*_bias_bf16_float.txt`: rounded BF16 bias converted back to float text for checking quantization effects
-- `*_meta.json`: metadata about tensor shapes, quantization format, source checkpoint, and export settings
-- `*_features_fp32.txt`: one CNN feature vector per sample in readable float format
-- `*_features_bf16.mem`: flattened BF16 feature stream to feed into FPGA logic
+- `*_conv_weight_bf16.mem`: BF16 fused convolution weights
+- `*_conv_bias_bf16.mem`: BF16 fused convolution bias
+- `*_classifier_weight_bf16.mem`: BF16 classifier weights
+- `*_classifier_bias_bf16.mem`: BF16 classifier bias
+- `*_input_bf16.mem`: BF16 raw model inputs
+- `*_features_bf16.mem`: flattened BF16 feature vectors after the CNN frontend
 - `*_labels.txt`: ground-truth labels for each exported sample
 - `*_fp32_logits.txt`: software FP32 classifier outputs, used as a golden reference
-- `*_bf16_logits.txt`: BF16-emulated classifier outputs, used when hardware is expected to behave like BF16
 - `*_fp32_pred.txt`: final FP32 predicted class per sample
-- `*_bf16_pred.txt`: final BF16-emulated predicted class per sample
-- `*_reference_bundle.npz`: all exported arrays bundled together for quick loading in Python
+- `*_meta.json`: metadata about tensor shapes, source checkpoint, and export settings
+- `*_reference_bundle.npz`: bundled software-side arrays for quick debugging in Python
 
 Recommended comparison flow:
 
-1. Use `param_fp32/` or `param_bf16/` to initialize the hardware classifier weights and bias.
-2. Feed the FPGA with the feature vectors from `extracted_feature/*_features_bf16.mem`.
-3. Compare FPGA logits or final classes against `*_fp32_logits.txt` / `*_fp32_pred.txt` or against the BF16 versions if your hardware math is BF16-like.
-4. Use `*_meta.json` and `*_reference_bundle.npz` when you need shapes, counts, or a compact software-side debug bundle.
+1. Use `fused_frontend_bf16/` to initialize the fused CNN weights and classifier weights.
+2. Feed the FPGA with raw BF16 inputs from `input_bf16/mini_mitbih_record_200_4beats_input_bf16.mem`.
+3. Compare the hardware frontend output or final classes against the software golden files in `mini_feature/`.
+4. Use `*_meta.json` when you need exact tensor shapes, kernel sizes, or sample counts.
 
 ## Expected dataset format
 
@@ -364,10 +398,11 @@ ECG_classification/
 │   │   ├── 01_setup_env.slurm
 │   │   ├── 02_demo_train.slurm
 │   │   ├── 03_gpu_train.slurm
-│   │   ├── 07_emulate_classifier_bf16.slurm
-│   │   ├── 08_export_fpga_reference.slurm
-│   │   ├── 09_export_fpga_reference_mini.slurm
-│   │   └── 10_export_fused_frontend_hw.slurm
+│   │   ├── 04_emulate_classifier_bf16.slurm
+│   │   ├── 05_export_fpga_reference.slurm
+│   │   ├── 06_export_fpga_reference_mini_record200_4.slurm
+│   │   ├── 07_export_fused_frontend_bf16.slurm
+│   │   └── 08_export_input_bf16_record200_4.slurm
 │   └── original/
 │       ├── 01_setup_env.slurm
 │       ├── 02_demo_train.slurm

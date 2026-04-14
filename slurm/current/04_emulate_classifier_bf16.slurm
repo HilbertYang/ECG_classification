@@ -1,10 +1,10 @@
 #!/bin/bash
 #------------------------------------------------------------
-# SCRIPT 8: Export CNN features and software reference for FPGA
+# SCRIPT 4: Emulate BF16 classifier and compare with FP32
 #
-# PURPOSE: Export the CNN feature vectors that will be fed into
-#          FPGA logic together with software reference logits
-#          and predicted classes for hardware comparison.
+# PURPOSE: Run a software-side BF16 emulation of the classifier
+#          before hardware deployment and measure the difference
+#          from the original FP32 classifier.
 #
 # PREREQUISITE:
 #   - Run 01_setup_env.slurm first
@@ -12,34 +12,26 @@
 #   - Have a processed dataset such as data/processed/mitbih_binary.npz
 #
 # HOW TO SUBMIT:
-#   sbatch slurm/current/08_export_fpga_reference.slurm
+#   sbatch slurm/current/04_emulate_classifier_bf16.slurm
 #
 # OUTPUT:
-#   hardware_export/extracted_feature/mitbih_lightweight_test_meta.json
-#   hardware_export/extracted_feature/mitbih_lightweight_test_features_fp32.txt
-#   hardware_export/extracted_feature/mitbih_lightweight_test_features_bf16.mem
-#   hardware_export/extracted_feature/mitbih_lightweight_test_labels.txt
-#   hardware_export/extracted_feature/mitbih_lightweight_test_fp32_logits.txt
-#   hardware_export/extracted_feature/mitbih_lightweight_test_bf16_logits.txt
-#   hardware_export/extracted_feature/mitbih_lightweight_test_fp32_pred.txt
-#   hardware_export/extracted_feature/mitbih_lightweight_test_bf16_pred.txt
-#   hardware_export/extracted_feature/mitbih_lightweight_test_reference_bundle.npz
+#   results/mitbih_lightweight_test_bf16_fp32.json
 #------------------------------------------------------------
 
-#SBATCH --job-name=fpga_curr
+#SBATCH --job-name=emu_curr
 #SBATCH --partition=main
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8GB
 #SBATCH --time=00:20:00
-#SBATCH --output=logs/current_export_fpga_reference.out
-#SBATCH --error=logs/current_export_fpga_reference.err
+#SBATCH --output=logs/current_emulate_classifier_bf16.out
+#SBATCH --error=logs/current_emulate_classifier_bf16.err
 
 set -e
 
 echo "============================================"
-echo "  Export FPGA Inputs and Reference Outputs"
+echo "  Emulate BF16 Classifier"
 echo "============================================"
 echo "Started: $(date)"
 echo "Node   : $SLURMD_NODENAME"
@@ -49,7 +41,6 @@ cd "$SLURM_SUBMIT_DIR"
 
 FULL_CKPT="checkpoints/mitbih_lightweight.pt"
 DATASET="data/processed/mitbih_binary.npz"
-OUT_DIR="hardware_export/extracted_feature"
 
 if [ ! -f "$FULL_CKPT" ]; then
     echo "ERROR: Full checkpoint not found: $FULL_CKPT"
@@ -73,19 +64,24 @@ conda activate ecg
 echo "Python: $(which python)"
 echo ""
 
-mkdir -p "$OUT_DIR"
-
-echo "--- Exporting test split CNN features and software references ---"
-python -m src.export_fpga_reference \
+echo "--- Running BF16 emulation with FP32 accumulation ---"
+python -m src.emulate_classifier_bf16 \
     --checkpoint "$FULL_CKPT" \
     --dataset "$DATASET" \
     --split test \
-    --accumulation fp32 \
-    --out-dir "$OUT_DIR"
+    --accumulation fp32
+
+echo ""
+echo "--- Running BF16 emulation with BF16 accumulation ---"
+python -m src.emulate_classifier_bf16 \
+    --checkpoint "$FULL_CKPT" \
+    --dataset "$DATASET" \
+    --split test \
+    --accumulation bf16
 
 echo ""
 echo "============================================"
-echo "  Exported FPGA reference files:"
-ls -lh "$OUT_DIR"/mitbih_lightweight_test*
+echo "  BF16 emulation reports:"
+ls -lh results/*bf16*
 echo "============================================"
 echo "Finished: $(date)"

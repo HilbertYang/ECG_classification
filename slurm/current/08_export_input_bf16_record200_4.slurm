@@ -1,12 +1,12 @@
 #!/bin/bash
 #------------------------------------------------------------
-# SCRIPT 13: Export record 200 first 4 input beats as BF16
+# SCRIPT 8: Export record 200 first 4 input beats as BF16
 #
 # PURPOSE: Export the raw model input windows for the first
 #          4 beats from MIT-BIH record 200 as BF16 files.
 #
 # HOW TO SUBMIT:
-#   sbatch slurm/current/13_export_input_bf16_record200_4.slurm
+#   sbatch slurm/current/08_export_input_bf16_record200_4.slurm
 #------------------------------------------------------------
 
 #SBATCH --job-name=input200_4

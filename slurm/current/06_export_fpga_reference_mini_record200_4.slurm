@@ -1,6 +1,6 @@
 #!/bin/bash
 #------------------------------------------------------------
-# SCRIPT 11: Export a tiny FPGA reference subset for record 200
+# SCRIPT 6: Export a tiny FPGA reference subset for record 200
 #
 # PURPOSE: Export a very small hardware-debug dataset using the
 #          first 4 beats from MIT-BIH record 200, along with
@@ -12,7 +12,7 @@
 #   - Have a processed dataset such as data/processed/mitbih_binary.npz
 #
 # HOW TO SUBMIT:
-#   sbatch slurm/current/11_export_fpga_reference_mini_record200_4.slurm
+#   sbatch slurm/current/06_export_fpga_reference_mini_record200_4.slurm
 #
 # OUTPUT:
 #   hardware_export/mini_feature/mini_mitbih_record_200_4beats_meta.json

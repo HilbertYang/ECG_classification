@@ -1,6 +1,6 @@
 #!/bin/bash
 #------------------------------------------------------------
-# SCRIPT 12: Export fused frontend parameters as BF16
+# SCRIPT 7: Export fused frontend parameters as BF16
 #
 # PURPOSE: Export the current lightweight model into BF16
 #          hardware parameter files where:
@@ -8,7 +8,7 @@
 #            Conv1d, and the classifier is exported alongside it.
 #
 # HOW TO SUBMIT:
-#   sbatch slurm/current/12_export_fused_frontend_bf16.slurm
+#   sbatch slurm/current/07_export_fused_frontend_bf16.slurm
 #------------------------------------------------------------
 
 #SBATCH --job-name=fused_bf16
