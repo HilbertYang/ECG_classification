@@ -1,0 +1,187 @@
+ECG Model Structure Summary
+===========================
+
+This file summarizes:
+1. the original model in `src_original/model.py`
+2. the current model in `src/model.py`
+3. which parameters are actually used
+4. how many trainable parameters each model uses
+
+
+1. Original Model (`src_original/model.py`)
+-------------------------------------------
+
+Definition reference:
+- `ECGFeatureExtractor`: `src_original/model.py:9`
+- `ECGNet`: `src_original/model.py:38`
+- training args actually passed into the model: `src_original/train.py:24-31`, `src_original/train.py:111-117`
+
+Default input:
+- input shape: `(batch, 1, 256)`
+- `input_channels = 1`
+- `signal_length = 256`
+- `num_classes = 2`
+- `hidden_channels = [16, 32, 64]`
+- `dropout = 0.2`
+
+Module structure:
+- Conv1d(1 -> 16, kernel_size=7, padding=3)
+- BatchNorm1d(16)
+- ReLU
+- MaxPool1d(2)
+- Conv1d(16 -> 32, kernel_size=7, padding=3)
+- BatchNorm1d(32)
+- ReLU
+- MaxPool1d(2)
+- Conv1d(32 -> 64, kernel_size=7, padding=3)
+- BatchNorm1d(64)
+- ReLU
+- MaxPool1d(2)
+- AdaptiveAvgPool1d(1)
+- Flatten
+- Dropout(0.2)
+- Linear(64 -> 2)
+
+Shape flow with default input `(batch, 1, 256)`:
+- `(batch, 1, 256)`
+- `(batch, 16, 256)` after conv1
+- `(batch, 16, 128)` after pool1
+- `(batch, 32, 128)` after conv2
+- `(batch, 32, 64)` after pool2
+- `(batch, 64, 64)` after conv3
+- `(batch, 64, 32)` after pool3
+- `(batch, 64, 1)` after adaptive average pool
+- `(batch, 64)` after flatten
+- `(batch, 2)` after linear classifier
+
+Trainable parameter count with default channels `[16, 32, 64]`:
+- Conv1: `16 * 1 * 7 + 16 = 128`
+- BN1: `16 + 16 = 32`
+- Conv2: `32 * 16 * 7 + 32 = 3616`
+- BN2: `32 + 32 = 64`
+- Conv3: `64 * 32 * 7 + 64 = 14400`
+- BN3: `64 + 64 = 128`
+- Classifier: `2 * 64 + 2 = 130`
+- Total trainable params: `18658`
+
+Which model arguments are really used:
+- `input_channels`: used
+- `signal_length`: used only to infer feature dimension during model build
+- `num_classes`: used
+- `hidden_channels`: used directly and changes the CNN width and total parameter count
+- `dropout`: used directly before the final linear layer
+
+How parameter count changes:
+- Feature dimension after `AdaptiveAvgPool1d(1)` is always the last hidden channel value.
+- Therefore the classifier input dim is `hidden_channels[-1]`.
+- Original model parameter count does NOT depend on `signal_length`.
+- It mainly depends on `hidden_channels`, `input_channels`, and `num_classes`.
+
+
+2. Current Model (`src/model.py`)
+---------------------------------
+
+Definition reference:
+- `ECGFeatureExtractor`: `src/model.py:7`
+- `ECGNet`: `src/model.py:26`
+- training args actually passed into the model: `src/train.py:23-28`, `src/train.py:104-109`
+
+Default input:
+- input shape: `(batch, 1, 256)`
+- `input_channels = 1`
+- `signal_length = 256`
+- `num_classes = 2`
+- `kernel_size = 7`
+
+Module structure:
+- Conv1d(1 -> 1, kernel_size=7, padding=3)
+- BatchNorm1d(1)
+- ReLU
+- MaxPool1d(2)
+- Flatten
+- Linear(128 -> 2)
+
+Shape flow with default input `(batch, 1, 256)`:
+- `(batch, 1, 256)`
+- `(batch, 1, 256)` after conv
+- `(batch, 1, 128)` after pool
+- `(batch, 128)` after flatten
+- `(batch, 2)` after linear classifier
+
+Trainable parameter count with default config:
+- Conv: `1 * 1 * 7 + 1 = 8`
+- BN: `1 + 1 = 2`
+- Classifier: `2 * 128 + 2 = 258`
+- Total trainable params: `268`
+
+Effective inference parameter count after Conv+BN fusion:
+- Fused conv weight: `7`
+- Fused conv bias: `1`
+- Classifier: `258`
+- Total effective deployed params after fusion: `266`
+
+Which model arguments are really used:
+- `input_channels`: used
+- `signal_length`: used to infer feature dimension during model build
+- `num_classes`: used
+- `kernel_size`: used directly and changes conv size and classifier input length indirectly only through output shape rules
+- `hidden_channels`: declared in `ECGNet(...)` but NOT used in the implementation
+- `mlp_hidden`: declared in `ECGNet(...)` but NOT used in the implementation
+
+Important note:
+- In the current training script, only `kernel_size` is exposed and passed in (`src/train.py:23-24`, `src/train.py:104-109`).
+- There is no active `dropout` in the current model.
+- There is no active multi-layer CNN width setting in the current model.
+
+How parameter count changes:
+- After same-padding Conv1d, length stays approximately the same.
+- After `MaxPool1d(2)`, feature length becomes `floor(signal_length / 2)`.
+- Flatten makes the classifier input dimension equal to `floor(signal_length / 2)`.
+- So current model parameter count depends on:
+  - conv params: `input_channels * kernel_size + 1` output-channel bias included because out_channels is fixed at 1
+  - bn params: `2`
+  - classifier params: `num_classes * floor(signal_length / 2) + num_classes`
+- For the default setting `(input_channels=1, signal_length=256, num_classes=2, kernel_size=7)`, total is `268`.
+
+
+3. Direct Comparison
+--------------------
+
+Original model:
+- deeper 3-layer CNN
+- has dropout
+- final feature length = `64`
+- total trainable params = `18658`
+- better as a richer baseline
+
+Current model:
+- single-conv lightweight frontend
+- no dropout
+- final feature length = `128` when `signal_length=256`
+- total trainable params = `268`
+- much easier for hardware-oriented deployment/export
+
+Parameter reduction from original to current:
+- `18658 -> 268`
+- reduced by `18390` trainable parameters
+- current model uses about `1.44%` of the original trainable parameter count
+
+
+4. Practical Conclusion
+-----------------------
+
+If you want to know "哪些参数现在真正有用":
+
+Original path (`src_original/`):
+- active structural params: `hidden_channels`, `dropout`
+- active task params: `input_channels`, `signal_length`, `num_classes`
+
+Current path (`src/`):
+- active structural param: `kernel_size`
+- active task params: `input_channels`, `signal_length`, `num_classes`
+- inactive placeholders in code: `hidden_channels`, `mlp_hidden`
+
+If you want to know "默认用了多少参数":
+- original default trainable params: `18658`
+- current default trainable params: `268`
+- current fused deployment params: `266`
